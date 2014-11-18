@@ -1,7 +1,7 @@
 
 
-def and = \x:Bool. \y:Bool. if x then if y then true else false else false;
-def or = \x:Bool. \y:Bool. if x then true else if y then true else false;
+def and = \x:Bool => \y:Bool => if x then if y then true else false else false;
+def or = \x:Bool => \y:Bool => if x then true else if y then true else false;
 
 print and;
 

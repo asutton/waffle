@@ -107,12 +107,12 @@ pp_var(std::ostream& os, Var* t) {
 
 void
 pp_abs(std::ostream& os, Abs* t) { 
-  os << '\\' << pretty(t->var()) << '.' << group(pretty(t->term())); 
+  os << '\\' << pretty(t->var()) << "=>" << group(pretty(t->term())); 
 }
 
 void
 pp_fn(std::ostream& os, Fn* t) { 
-  os << "\\(" << commas(t->parms()) << ")." << group(pretty(t->term())); 
+  os << "\\(" << commas(t->parms()) << ")=>" << group(pretty(t->term())); 
 }
 
 void

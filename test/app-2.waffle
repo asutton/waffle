@@ -1,2 +1,2 @@
 
-(\x:Nat->Nat.x) (\a:Nat.a) 0;
+(\x:Nat->Nat => x) (\a:Nat => a) 0;

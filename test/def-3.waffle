@@ -1,8 +1,8 @@
 
 def BB = Bool -> Bool;
 
-def and = \x:Bool. \y:Bool. if x then if y then true else false else false;
-def x = \f:BB.f;
+def and = \x:Bool => \y:Bool => if x then if y then true else false else false;
+def x = \f:BB => f;
 
 print (x and) true;
 

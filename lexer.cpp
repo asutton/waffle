@@ -34,7 +34,14 @@ lex_tokens(Lexer& lex) {
   case '<': lex::unigraph(lex, langle_tok); break;
   case '>': lex::unigraph(lex, rangle_tok); break;
   case ';': lex::unigraph(lex, semicolon_tok); break;
-  case '=': lex::unigraph(lex, equal_tok); break;
+  
+  case '=': 
+    if (lex::next_char_is(lex, '>'))
+      return lex::digraph(lex, map_tok);
+    else
+      lex::unigraph(lex, equal_tok); break;
+    break;
+  
   case '\\': lex::unigraph(lex, backslash_tok); break;
   case ':': lex::unigraph(lex, colon_tok); break;
   case '.': lex::unigraph(lex, dot_tok); break;

@@ -156,20 +156,20 @@ parse_parm_clause(Parser& p) {
 
 // Parse a lambda abstraction.
 //
-//    lambda-expr ::= '\' parm-decl ':' type '.' term
-//                  | '\' parm-list '.' term
+//    lambda-expr ::= '\' parm-decl ':' type '=>' term
+//                  | '\' parm-list '=>' term
 Tree*
 parse_lambda_expr(Parser& p) {
   if (const Token* k = parse::accept(p, backslash_tok)) {
     if(Tree* v = parse_parm_decl(p)) {
-      if (parse::expect(p, dot_tok)) {
+      if (parse::expect(p, map_tok)) {
         if (Tree* t = parse_expr(p))
           return new Abs_tree(k, v, t);
         else
           parse::parse_error(p) << "expected 'expr' after '.'";
       }
     } else if (Tree_seq* ps = parse_parm_clause(p)) {
-      if (parse::expect(p, dot_tok)) {
+      if (parse::expect(p, map_tok)) {
         if (Tree* t = parse_expr(p))
           return new Fn_tree(k, ps, t);
         else
@@ -477,7 +477,6 @@ parse_prefix_expr(Parser& p) {
     return t;
   return parse_postfix_expr(p);
 }
-
 
 // Parse an arrow expression.
 //
