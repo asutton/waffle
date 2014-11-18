@@ -1,0 +1,7 @@
+
+def T = {Bool, Nat, Unit};
+print T;
+
+def fn = \x:T.x;
+print fn;
+print typeof fn;

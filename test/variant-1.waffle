@@ -1,0 +1,2 @@
+
+def t = <b:Bool, n:Nat, u:Unit>;

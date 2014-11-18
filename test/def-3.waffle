@@ -1,0 +1,11 @@
+
+def BB = Bool -> Bool;
+
+def and = \x:Bool. \y:Bool. if x then if y then true else false else false;
+def x = \f:BB.f;
+
+print (x and) true;
+
+print typeof and;
+print typeof x;
+print typeof (and true);

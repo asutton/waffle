@@ -1,0 +1,25 @@
+
+
+def and = \x:Bool. \y:Bool. if x then if y then true else false else false;
+def or = \x:Bool. \y:Bool. if x then true else if y then true else false;
+
+print and;
+
+print and true true;
+print and true false;
+print and false true;
+print and false false;
+
+def and_true = and true;
+def and_false = and true;
+print and_true;
+print and_false;
+
+print unit;
+
+print or;
+print or true true;
+print or true false;
+print or false true;
+print or false false;
+

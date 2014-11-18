@@ -1,0 +1,4 @@
+
+def t0 = {true, 0, succ 0, false};
+print t0;
+print typeof t0;
