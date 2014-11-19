@@ -145,4 +145,24 @@ template<typename L>
     advance(lex, iter - lex.first);
   }
 
+// Lex a string literal. A string literal is enclosed in quotes
+// and may contain esacape characters. An escape character is
+// a '\'' followed by a character.
+// 
+// TODO: Allow for extended forms of escape characters?
+template<typename L>
+  inline void
+  string(L& lex) {
+    auto iter = lex.first + 1;
+    while (iter != lex.last && *iter != '"') {
+      if (*iter == '\\')
+        ++iter;
+      ++iter;
+    }
+    ++iter; // Keep the enclosing quote.
+    String str(lex.first, iter);
+    save(lex, string_literal_tok, str);
+    advance(lex, iter - lex.first);
+  }
+
 } // lex

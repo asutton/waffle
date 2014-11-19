@@ -24,6 +24,7 @@ constexpr Token_kind backslash_tok = make_token("\\");
 constexpr Token_kind colon_tok     = make_token(":");
 constexpr Token_kind dot_tok       = make_token(".");
 constexpr Token_kind comma_tok     = make_token(",");
+constexpr Token_kind dquote_tok    = make_token('"');
 constexpr Token_kind arrow_tok     = make_token("->");
 constexpr Token_kind map_tok       = make_token("=>");
 // Keywords

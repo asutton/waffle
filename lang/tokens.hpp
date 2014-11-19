@@ -136,6 +136,7 @@ constexpr Token_kind binary_literal_tok      = make_token(token_int_type, 2);
 constexpr Token_kind octal_literal_tok       = make_token(token_int_type, 3);
 constexpr Token_kind decimal_literal_tok     = make_token(token_int_type, 4);
 constexpr Token_kind hexadecimal_literal_tok = make_token(token_int_type, 5);
+constexpr Token_kind string_literal_tok      = make_token(token_str_type, 10);
 
 // -------------------------------------------------------------------------- //
 // Token structure

@@ -6,6 +6,8 @@
 #include "location.hpp"
 #include "error.hpp"
 
+#include <iostream>
+
 namespace lex {
 
 // -------------------------------------------------------------------------- //
@@ -40,6 +42,7 @@ template<typename L> void digraph(L&, Token_kind);
 template<typename L> void error(L&);
 template<typename L> void id(L&);
 template<typename L> void integer(L&);
+template<typename L> void string(L&);
 
 } // namespace lex
 
