@@ -78,6 +78,13 @@ keyword(String s) {
   return error_tok;
 }
 
+String
+as_string(const Token& k) {
+  lang_assert(token::get_type(k.kind) == token_str_type,
+              format("token '{0}' is not a string value", k));
+  return k.text;
+}
+
 // Returns the integer elaboration of the token. If the token is
 // not one of the integer tokens, behavior is undefined.
 Integer

@@ -181,6 +181,7 @@ Token_kind keyword(String);
 // -------------------------------------------------------------------------- //
 // Token elaboration
 
+String as_string(const Token&);
 Integer as_integer(const Token&);
 
 #include "tokens.ipp"

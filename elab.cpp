@@ -137,13 +137,16 @@ elab_lit(Lit_tree* t) {
     return new False(t->loc, get_bool_type());
   case decimal_literal_tok: 
     return new Int(t->loc, get_nat_type(), as_integer(*k));
+  case string_literal_tok:
+    return new Str(t->loc, get_str_type(), as_string(*k));
   case unit_type_tok: 
     return new Unit_type(t->loc, get_kind_type());
   case bool_type_tok: 
     return new Bool_type(t->loc, get_kind_type());
   case nat_type_tok: 
     return new Nat_type(t->loc, get_kind_type());
-  default: break;
+  default: 
+    break;
   }
   lang_unreachable(format("elaborating unknown literal '{}'", pretty(t)));
 }

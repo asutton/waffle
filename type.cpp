@@ -11,6 +11,7 @@ Kind_type* kind_type_;
 Unit_type* unit_type_;
 Bool_type* bool_type_;
 Nat_type* nat_type_;
+Str_type* str_type_;
 
 } // namespace
 
@@ -20,6 +21,7 @@ init_types() {
   unit_type_ = new Unit_type(kind_type_);
   bool_type_ = new Bool_type(kind_type_);
   nat_type_ = new Nat_type(kind_type_);
+  str_type_ = new Str_type(kind_type_);
 }
 
 Type*
@@ -33,6 +35,9 @@ get_bool_type() { return bool_type_; }
 
 Type*
 get_nat_type() { return nat_type_; }
+
+Type*
+get_str_type() { return str_type_; }
 
 
 // -------------------------------------------------------------------------- //

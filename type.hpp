@@ -11,6 +11,7 @@ Type* get_kind_type();
 Type* get_unit_type();
 Type* get_bool_type();
 Type* get_nat_type();
+Type* get_str_type();
 
 bool is_type(Expr*);
 bool is_unit_type(Type*);
