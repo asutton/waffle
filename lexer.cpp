@@ -56,6 +56,7 @@ lex_tokens(Lexer& lex) {
 
   case '"':
     lex::string(lex);
+    break;
 
   default:
     // Maybe this is an identifier, keyowrd, or number.
