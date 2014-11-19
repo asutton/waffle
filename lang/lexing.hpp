@@ -6,8 +6,6 @@
 #include "location.hpp"
 #include "error.hpp"
 
-#include <iostream>
-
 namespace lex {
 
 // -------------------------------------------------------------------------- //
