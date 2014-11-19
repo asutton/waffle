@@ -21,9 +21,10 @@ constexpr Node_kind pred_tree    = make_tree_node(131); // pred t
 constexpr Node_kind iszero_tree  = make_tree_node(132); // iszero t
 constexpr Node_kind arrow_tree   = make_tree_node(140); // t1 -> t2
 constexpr Node_kind tuple_tree   = make_tree_node(150); // {t1, ..., tn}
-constexpr Node_kind variant_tree = make_tree_node(151); // <t1, ..., tn>
-constexpr Node_kind comma_tree   = make_tree_node(152); // t1, ..., tn
-constexpr Node_kind dot_tree     = make_tree_node(153); // t1.t2
+constexpr Node_kind list_tree    = make_tree_node(151); // [t1, ..., tn]
+constexpr Node_kind variant_tree = make_tree_node(152); // <t1, ..., tn>
+constexpr Node_kind comma_tree   = make_tree_node(153); // t1, ..., tn
+constexpr Node_kind dot_tree     = make_tree_node(154); // t1.t2
 constexpr Node_kind print_tree   = make_tree_node(200); // print t
 constexpr Node_kind typeof_tree  = make_tree_node(201); // typeof t
 constexpr Node_kind prog_tree    = make_tree_node(500); // stmts
@@ -193,6 +194,17 @@ struct Typeof_tree : Tree {
 struct Tuple_tree : Tree {
   Tuple_tree(const Token* k, Tree_seq* ts)
     : Tree(tuple_tree, k->loc), t1(ts) { }
+
+  Tree_seq* elems() const { return t1; }
+
+  Tree_seq* t1;
+};
+
+// A list of the form '[t1, ..., tn]' where each 'ti' is simply
+// some other term.
+struct List_tree : Tree {
+  List_tree(const Token* k, Tree_seq* ts)
+    : Tree(list_tree, k->loc), t1(ts) { }
 
   Tree_seq* elems() const { return t1; }
 

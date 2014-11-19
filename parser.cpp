@@ -240,7 +240,7 @@ parse_elem(Parser& p) {
 //
 //    elem-list ::= elem | elem-list ',' elem
 Tree_seq*
-parse_elem_list(Parser& p) {
+parse_elem_list(Parser& p, Token_kind close_tok) {
   Tree_seq* ts = new Tree_seq();
   while (true) {
     // Try parsing the next element.
@@ -250,29 +250,45 @@ parse_elem_list(Parser& p) {
       return nullptr;
 
     // Either break or continue.
-    if (parse::next_token_is(p, rbrace_tok))
-      break;
-    if (parse::next_token_is(p, rangle_tok))
+    if (parse::next_token_is(p, close_tok))
       break;
     parse::expect(p, comma_tok);
   }
   return ts;
 }
 
+// Parse a comma-separated sequence of expressions that are by a 
+// enclosed by pair of tokens.
+template<typename T>
+  Tree*
+  parse_enclosed_expr(Parser& p, Token_kind open_tok, Token_kind close_tok) {
+    if (const Token* k = parse::accept(p, open_tok)) {
+      if (Tree_seq* ts = parse_elem_list(p, close_tok)) {
+        if (parse::expect(p, close_tok))
+          return new T(k, ts);
+      } else {
+        // TODO: expected after the open_token
+        parse::parse_error(p) << "expected 'elem-list'";
+      }
+    }
+    return nullptr;
+  }
+
+
 // Parse a tuple expression.
 //
 //    tuple-expr ::= '{' t1, ..., tn '}'
 Tree*
 parse_tuple_expr(Parser& p) {
-  if (const Token* k = parse::accept(p, lbrace_tok)) {
-    if (Tree_seq* ts = parse_elem_list(p)) {
-      if (parse::expect(p, rbrace_tok))
-        return new Tuple_tree(k, ts);
-    } else {
-      parse::parse_error(p) << "expected 'elem-list' after '{'";
-    }
-  }
-  return nullptr;
+  return parse_enclosed_expr<Tuple_tree>(p, lbrace_tok, rbrace_tok);
+}
+
+// Parse a list expression.
+//
+//    list-expr ::= '[' t1, ..., tn ']'
+Tree*
+parse_list_expr(Parser& p) {
+  return parse_enclosed_expr<List_tree>(p, lbracket_tok, rbracket_tok);
 }
 
 // Parse a variant expression.
@@ -280,15 +296,7 @@ parse_tuple_expr(Parser& p) {
 //    tuple-expr ::= '<' t1, ..., tn '>'
 Tree*
 parse_variant_expr(Parser& p) {
-  if (const Token* k = parse::accept(p, langle_tok)) {
-    if (Tree_seq* ts = parse_elem_list(p)) {
-      if (parse::expect(p, rangle_tok))
-        return new Variant_tree(k, ts);
-    } else {
-      parse::parse_error(p) << "expected 'elem-list' after '{'";
-    }
-  }
-  return nullptr;  return nullptr;
+  parse_enclosed_expr<Variant_tree>(p, langle_tok, rangle_tok);
 }
 
 // Parse a grouped expression.
@@ -344,6 +352,8 @@ parse_primary_expr(Parser& p) {
   if (Tree* t = parse_id_expr(p))
     return t;
   if (Tree* t = parse_tuple_expr(p))
+    return t;
+  if (Tree* t = parse_list_expr(p))
     return t;
   if (Tree* t = parse_variant_expr(p))
     return t;
