@@ -28,6 +28,8 @@ constexpr Node_kind int_term     = make_term_node(20); // N
 constexpr Node_kind succ_term    = make_term_node(21); // succ t
 constexpr Node_kind pred_term    = make_term_node(22); // pred t
 constexpr Node_kind iszero_term  = make_term_node(23); // iszero t
+// String terms
+constexpr Node_kind str_term    = make_term_node(25);  // "str"
 // Lambda terms
 constexpr Node_kind var_term     = make_term_node(30); // x : T
 constexpr Node_kind abs_term     = make_term_node(31); // \v.t
@@ -53,11 +55,12 @@ constexpr Node_kind kind_type    = make_type_node(1);  // *
 constexpr Node_kind unit_type    = make_type_node(2);  // Unit
 constexpr Node_kind bool_type    = make_type_node(3);  // Bool
 constexpr Node_kind nat_type     = make_type_node(5);  // Nat
-constexpr Node_kind arrow_type   = make_type_node(6);  // T -> U
-constexpr Node_kind fn_type      = make_type_node(7);  // (T1, ..., Tn) -> U
-constexpr Node_kind tuple_type   = make_type_node(8);  // {T1, ..., Tn}
-constexpr Node_kind record_type  = make_type_node(9);  // {l1:T1, ..., ln:Tn}
-constexpr Node_kind variant_type = make_type_node(10); // <l1:T1, ..., ln:Tn>
+constexpr Node_kind str_type     = make_type_node(6);  // Str
+constexpr Node_kind arrow_type   = make_type_node(20); // T -> U
+constexpr Node_kind fn_type      = make_type_node(21); // (T1, ..., Tn) -> U
+constexpr Node_kind tuple_type   = make_type_node(22); // {T1, ..., Tn}
+constexpr Node_kind record_type  = make_type_node(23); // {l1:T1, ..., ln:Tn}
+constexpr Node_kind variant_type = make_type_node(24); // <l1:T1, ..., ln:Tn>
 
 
 // -------------------------------------------------------------------------- //
@@ -204,6 +207,19 @@ struct Iszero : Term {
   Term* arg() const { return t1; }
 
   Term* t1;
+};
+
+// Represents the string literal "...", a sequence of characters
+// enclosed in quotes.
+struct Str : Term {
+  Str(Type* t, String s)
+    : Term(str_term, t), t1(s) { }
+  Str(const Location& l, Type* t, String s)
+    : Term(str_term, l, t), t1(s) { }
+
+  String value() const { return t1; }
+
+  String t1;
 };
 
 // A variable declaration of the form 'x : T' in a lambda
@@ -456,6 +472,14 @@ struct Nat_type : Type {
     : Type(nat_type, k) { }
   Nat_type(const Location& l, Type* k)
     : Type(nat_type, l, k) { }
+};
+
+// Represents the type of string vales.
+struct Str_type : Type {
+  Str_type(Type* k)
+    : Type(str_type, k) { }
+  Str_type(const Location& l, Type* k)
+    : Type(str_type, l, k) { }
 };
 
 // An arrow type of the form 'T1->T2'.

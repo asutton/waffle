@@ -16,6 +16,7 @@ bool is_type(Expr*);
 bool is_unit_type(Type*);
 bool is_bool_type(Type*);
 bool is_nat_type(Type*);
+bool is_str_type(Type*);
 bool is_arrow_type(Type*);
 
 Type* get_type(Expr*);

@@ -39,12 +39,18 @@ init_nodes() {
 
 bool
 is_term_literal(Term* t) {
-  return is_unit(t) || is_boolean_value(t) || is_integer_value(t);
+  return is_unit(t) 
+      or is_boolean_value(t) 
+      or is_integer_value(t) 
+      or is_string_value(t);
 }
 
 bool
 is_type_literal(Type* t) {
-  return is_unit_type(t) || is_bool_type(t) || is_nat_type(t);
+  return is_unit_type(t) 
+      or is_bool_type(t) 
+      or is_nat_type(t)
+      or is_str_type(t);
 }
 
 // Returns true if t is a term literal or type literal.
@@ -75,8 +81,9 @@ is_terminal(Expr* t) {
 namespace {
 
 // TODO: This should move into the printing support library.
-void
-pp_value(std::ostream& os, const Integer& n) { os << n; }
+template<typename T>
+  void
+  pp_value(std::ostream& os, const T& x) { os << x; }
 
 void
 pp_if(std::ostream& os, If* t) {
@@ -226,6 +233,7 @@ pp_expr(std::ostream& os, Node* t) {
   case true_term: return pp_string(os, "true");
   case false_term: return pp_string(os, "false");
   case int_term: return pp_value(os, as<Int>(t)->value());
+  case str_term: return pp_value(os, as<Str>(t)->value());
   case if_term: return pp_if(os, as<If>(t));
   case succ_term: return pp_succ(os, as<Succ>(t));
   case pred_term: return pp_pred(os, as<Pred>(t));
@@ -248,6 +256,7 @@ pp_expr(std::ostream& os, Node* t) {
   case unit_type: return pp_string(os, "Unit");
   case bool_type: return pp_string(os, "Bool");
   case nat_type: return pp_string(os, "Nat");
+  case str_type: return pp_string(os, "Str");
   case arrow_type: return pp_arrow_type(os, as<Arrow_type>(t));
   case fn_type: return pp_fn_type(os, as<Fn_type>(t));
   case tuple_type: return pp_tuple_type(os, as<Tuple_type>(t));

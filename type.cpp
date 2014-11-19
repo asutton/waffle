@@ -53,6 +53,10 @@ is_bool_type(Type* t) { return t->kind == bool_type; }
 bool
 is_nat_type(Type* t) { return t->kind == nat_type; }
 
+// Returns true if t is the str type.
+bool
+is_str_type(Type* t) { return t->kind == str_type; }
+
 // Returns true if t is an arrow type.
 bool 
 is_arrow_type(Type* t) { return t->kind == arrow_type; }

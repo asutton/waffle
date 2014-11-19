@@ -66,16 +66,21 @@ is_abs(Term* t) { return t->kind == abs_term; }
 bool
 is_unit(Term* t) { return t->kind == unit_term; }
 
+// Returns true when t is a string value.
+bool
+is_string_value(Term* t) { return t->kind == str_term; }
 
-// Returns true if t is a value.
+// Returns true if t is a value (in normal form), which is defined
+// inductively as:
 //
-//    v ::= bv | nv | \x:T.t
+//    v ::= unit | boolean-value | integer-value | string-value | \x:T.t
+
 bool
 is_value(Term* t) { 
   return is_unit(t)
-      || is_boolean_value(t) 
-      || is_integer_value(t) 
-      || is_abs(t);
-      
+      or is_boolean_value(t) 
+      or is_integer_value(t) 
+      or is_string_value(t)
+      or is_abs(t);
 }
 

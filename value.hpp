@@ -14,9 +14,11 @@ Term* get_zero();
 
 bool is_value(Term*);
 bool is_boolean_value(Term*);
+bool is_integer_value(Term*);
+bool is_string_value(Term*);
+
 bool is_true(Term*);
 bool is_false(Term*);
-bool is_integer_value(Term*);
 bool is_abs(Term*);
 bool is_unit(Term*);
 
