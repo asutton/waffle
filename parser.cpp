@@ -59,9 +59,24 @@ parse_boolean_lit(Parser& p) {
   return nullptr;
 }
 
+// Parse an integer literal.
+//
+//    integer-literal ::= decimal-literal-token
+//
+// TODO: Allow for binary, octal, and hexadecimal integers.
 Tree*
 parse_integer_lit(Parser& p) {
   if (const Token* k = parse::accept(p, decimal_literal_tok))
+    return new Lit_tree(k);
+  return nullptr;
+}
+
+// Parse a string literal.
+//
+//    string-literal ::= string-literal-token
+Tree*
+parse_string_lit(Parser& p) {
+  if (const Token* k = parse::accept(p, string_literal_tok))
     return new Lit_tree(k);
   return nullptr;
 }
@@ -78,6 +93,28 @@ parse_type_lit(Parser& p) {
   if (const Token* k = parse::accept(p, nat_type_tok))
     return new Lit_tree(k);
   return nullptr;
+}
+
+// Parse a literal expression.
+//
+//    literal-expr ::= unit-literal
+//                   | boolean-literal 
+//                   | integer-literal 
+//                   | string-literal
+//                   | type-literal
+Tree*
+parse_literal_expr(Parser& p) {
+  if (Tree* t = parse_unit_lit(p))
+    return t;
+  if (Tree* t = parse_boolean_lit(p))
+    return t;
+  if (Tree* t = parse_integer_lit(p))
+    return t;
+  if (Tree* t = parse_string_lit(p))
+    return t;
+  if (Tree* t = parse_type_lit(p))
+    return t;
+  return nullptr;  
 }
 
 // Parse an identifer.
@@ -300,13 +337,7 @@ parse_grouped_expr(Parser& p) {
 //    primary-term ::= primary-lambda-term | grouped-term
 Tree*
 parse_primary_expr(Parser& p) {
-  if (Tree* t = parse_unit_lit(p))
-    return t;
-  if (Tree* t = parse_boolean_lit(p))
-    return t;
-  if (Tree* t = parse_integer_lit(p))
-    return t;
-  if (Tree* t = parse_type_lit(p))
+  if (Tree* t = parse_literal_expr(p))
     return t;
   if (Tree* t = parse_lambda_expr(p))
     return t;
