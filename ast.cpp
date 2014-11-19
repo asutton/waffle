@@ -21,6 +21,7 @@ init_nodes() {
   init_node(abs_term, "abs");
   init_node(app_term, "app");
   init_node(tuple_term, "tuple");
+  init_node(list_term, "list");
   init_node(record_term, "record");
   init_node(comma_term, "comma");
   init_node(proj_term, "proj");
@@ -30,8 +31,10 @@ init_nodes() {
   init_node(unit_type, "unit-type");
   init_node(bool_type, "bool-type");
   init_node(nat_type, "nat-type");
+  init_node(str_type, "str-type");
   init_node(arrow_type, "arrow-type");
   init_node(tuple_type, "tuple-type");
+  init_node(list_type, "list-type");
 }
 
 // -------------------------------------------------------------------------- //
@@ -148,6 +151,11 @@ pp_tuple(std::ostream& os, Tuple* t) {
 }
 
 void
+pp_list(std::ostream& os, List* t) {
+  os << '[' << commas(t->elems()) << ']';
+}
+
+void
 pp_record(std::ostream& os, Record* t) {
   os << '{' << commas(t->members()) << '}';
 }
@@ -211,6 +219,11 @@ pp_tuple_type(std::ostream& os, Tuple_type* t) {
 }
 
 void
+pp_list_type(std::ostream& os, List_type* t) {
+  os << '[' << pretty(t->type()) << ']';
+}
+
+void
 pp_record_type(std::ostream& os, Record_type* t) {
   os << '{' << commas(t->members()) << '}';
 }
@@ -247,6 +260,7 @@ pp_expr(std::ostream& os, Node* t) {
   case def_term: return pp_def(os, as<Def>(t));
   case init_term: return pp_init(os, as<Init>(t));
   case tuple_term: return pp_tuple(os, as<Tuple>(t));
+  case list_term: return pp_list(os, as<List>(t));
   case record_term: return pp_record(os, as<Record>(t));
   case comma_term: return pp_comma(os, as<Comma>(t));
   case proj_term: return pp_proj(os, as<Proj>(t));
@@ -260,6 +274,7 @@ pp_expr(std::ostream& os, Node* t) {
   case arrow_type: return pp_arrow_type(os, as<Arrow_type>(t));
   case fn_type: return pp_fn_type(os, as<Fn_type>(t));
   case tuple_type: return pp_tuple_type(os, as<Tuple_type>(t));
+  case list_type: return pp_list_type(os, as<List_type>(t));
   case record_type: return pp_record_type(os, as<Record_type>(t));
   default: break;
   }

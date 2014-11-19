@@ -38,11 +38,12 @@ constexpr Node_kind app_term     = make_term_node(33); // t1 t2
 constexpr Node_kind call_term    = make_term_node(34); // (t1, ..., tn)
 // Tuples, records, and variants
 constexpr Node_kind tuple_term   = make_term_node(40); // {t1, ..., tn}
-constexpr Node_kind record_term  = make_term_node(41); // {l1=t1, ..., ln=tn}
-constexpr Node_kind variant_term = make_term_node(42); // <l1=t1, ..., ln=tn>
-constexpr Node_kind comma_term   = make_term_node(43); // t1, ..., tn
-constexpr Node_kind proj_term    = make_term_node(44); // t1.n
-constexpr Node_kind mem_term     = make_term_node(45); // t1.x
+constexpr Node_kind list_term    = make_term_node(41); // [t1, ..., tn]
+constexpr Node_kind record_term  = make_term_node(42); // {l1=t1, ..., ln=tn}
+constexpr Node_kind variant_term = make_term_node(43); // <l1=t1, ..., ln=tn>
+constexpr Node_kind comma_term   = make_term_node(44); // t1, ..., tn
+constexpr Node_kind proj_term    = make_term_node(45); // t1.n
+constexpr Node_kind mem_term     = make_term_node(46); // t1.x
 // Declarations
 constexpr Node_kind def_term     = make_term_node(50); // def n = t
 constexpr Node_kind init_term    = make_term_node(51); // n = t
@@ -59,8 +60,9 @@ constexpr Node_kind str_type     = make_type_node(6);  // Str
 constexpr Node_kind arrow_type   = make_type_node(20); // T -> U
 constexpr Node_kind fn_type      = make_type_node(21); // (T1, ..., Tn) -> U
 constexpr Node_kind tuple_type   = make_type_node(22); // {T1, ..., Tn}
-constexpr Node_kind record_type  = make_type_node(23); // {l1:T1, ..., ln:Tn}
-constexpr Node_kind variant_type = make_type_node(24); // <l1:T1, ..., ln:Tn>
+constexpr Node_kind list_type    = make_type_node(23); // [T]
+constexpr Node_kind record_type  = make_type_node(24); // {l1:T1, ..., ln:Tn}
+constexpr Node_kind variant_type = make_type_node(25); // <l1:T1, ..., ln:Tn>
 
 
 // -------------------------------------------------------------------------- //
@@ -331,13 +333,24 @@ struct Init : Term {
   Expr* t2;
 };
 
-// A tuple of the form '{t1, ..., tn}' where each ti is
-// a term.
+// A tuple of the form '{t1, ..., tn}' where each 'ti' is a term.
 struct Tuple : Term {
   Tuple(Type* t, Term_seq* ts)
     : Term(tuple_term, t), t1(ts) { }
   Tuple(const Location& l, Type* t, Term_seq* ts)
     : Term(tuple_term, l, t), t1(ts) { }
+
+  Term_seq* elems() const { return t1; }
+
+  Term_seq* t1;
+};
+
+// A list of the form '[t1, ..., tn]' where each 'ti' is a term.
+struct List : Term {
+  List(Type* t, Term_seq* ts)
+    : Term(list_term, t), t1(ts) { }
+  List(const Location& l, Type* t, Term_seq* ts)
+    : Term(list_term, l, t), t1(ts) { }
 
   Term_seq* elems() const { return t1; }
 
@@ -510,7 +523,7 @@ struct Fn_type : Type {
   Type* t2;
 };
 
-// The type of a type has the form '{T1, ..., Tn}'.
+// The type of a tuple has the form '{T1, ..., Tn}'.
 struct Tuple_type : Type {
   Tuple_type(Type* k, Type_seq* ts)
     : Type(tuple_type, k), t1(ts) { }
@@ -520,6 +533,18 @@ struct Tuple_type : Type {
   Type_seq* types() const { return t1; }
 
   Type_seq* t1;
+};
+
+// The type of a list has the form [T].
+struct List_type : Type {
+  List_type(Type* k, Type* ts)
+    : Type(list_type, k), t1(ts) { }
+  List_type(const Location& l, Type* k, Type* ts)
+    : Type(list_type, l, k), t1(ts) { }
+
+  Type* type() const { return t1; }
+
+  Type* t1;
 };
 
 // The type of a record has the form '{n1:T1, ..., nn:Tn}' 
