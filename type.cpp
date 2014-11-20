@@ -22,6 +22,7 @@ init_types() {
   bool_type_ = new Bool_type(kind_type_);
   nat_type_ = new Nat_type(kind_type_);
   str_type_ = new Str_type(kind_type_);
+  //tuple_type_ = new Tuple_type(kind_type_);
 }
 
 Type*

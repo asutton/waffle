@@ -57,6 +57,31 @@ same_ref(Ref* a, Ref* b) {
   return a->decl() == b->decl();
 }
 
+// Two Init terms are the same if they have the same Name and expr
+inline bool
+same_init(Init* a, Init* b) {
+  return (is_same(a->name(), b->name()) and is_same(a->value(), b->value()));
+}
+
+// Two records are the same if every subterm of type Init is the same
+inline bool
+same_record(Record* a, Record* b) {
+  if(a->members()->size() == b->members()->size()) {
+    auto it_a = a->members()->begin();
+    auto it_b = a->members()->begin();
+    for(it_a; it_a != a->members()->end(); ++it_a) {
+      if(!is_same(*it_a, *it_b)) {
+        return false;
+      }
+    }
+  }
+  else {
+    return false;
+  }
+
+  return true;
+}
+
 } // namespace
 
 
@@ -78,6 +103,8 @@ is_same(Expr* a, Expr* b) {
   case abs_term: return same_binary(as<Var>(a), as<Var>(b));
   case app_term: return same_binary(as<Var>(a), as<Var>(b));
   case ref_term: return same_ref(as<Ref>(a), as<Ref>(b));
+  case init_term: return same_init(as<Init>(a), as<Init>(b));
+  case record_term: return same_record(as<Record>(a), as<Record>(b));
   case kind_type: return true;
   case unit_type: return true;
   case bool_type: return true;

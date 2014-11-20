@@ -25,8 +25,19 @@ constexpr Node_kind list_tree    = make_tree_node(151); // [t1, ..., tn]
 constexpr Node_kind variant_tree = make_tree_node(152); // <t1, ..., tn>
 constexpr Node_kind comma_tree   = make_tree_node(153); // t1, ..., tn
 constexpr Node_kind dot_tree     = make_tree_node(154); // t1.t2
+constexpr Node_kind table_tree   = make_tree_node(160); // [t1:T1,...,tn:Tn]{{t1=v1:T1,...,tn=vn:Tn}...}
+constexpr Node_kind select_tree  = make_tree_node(161); // select t1 from t2 where t3
+constexpr Node_kind join_on_tree = make_tree_node(162); // t1 join t2 on t3
+constexpr Node_kind union_tree   = make_tree_node(163); // t1 union t2
+constexpr Node_kind intersect_tree = make_tree_node(164); // t1 intersect t2
+constexpr Node_kind except_tree  = make_tree_node(165); // t1 except t2
 constexpr Node_kind print_tree   = make_tree_node(200); // print t
 constexpr Node_kind typeof_tree  = make_tree_node(201); // typeof t
+constexpr Node_kind and_tree     = make_tree_node(300); // t1 and t2
+constexpr Node_kind or_tree      = make_tree_node(301); // t1 or t2
+constexpr Node_kind not_tree     = make_tree_node(302); // t1 not t2
+constexpr Node_kind eq_comp_tree = make_tree_node(303); // t1 == t2
+constexpr Node_kind less_tree    = make_tree_node(304); // t1 < t2
 constexpr Node_kind prog_tree    = make_tree_node(500); // stmts
 
 struct Tree : Node { using Node::Node; };
@@ -211,6 +222,67 @@ struct List_tree : Tree {
   Tree_seq* t1;
 };
 
+// A table of the form [t1:T1,...,tn:Tn]{{t1=v1:T1,...,tn=vn:Tn}...}
+// where [t1:T1,...,tn:Tn] define the schema of the table
+// and {{t1=v1:T1,...,tn=vn:Tn}...} defines the records in the table
+struct Table_tree : Tree {
+  Table_tree(const Token* k, Tree_seq* schema, Tree_seq* records)
+    : Tree(table_tree, k->loc), s(schema), r(records) { }
+
+  Tree_seq* schema() const { return s; }
+  Tree_seq* records() const { return r; }
+
+  Tree_seq* s;
+  Tree_seq* r;
+};
+
+// A sql statement of form select t1 from t2 where t3 
+struct Select_tree : Tree {
+  Select_tree(const Token* k, Tree_seq* t1, Tree* t2, Tree* t3) 
+    : Tree(select_tree, k->loc), t1(t1), t2(t2), t3(t3) { }
+
+  Tree_seq* t1;
+  Tree* t2;
+  Tree* t3;
+};
+
+// A sql statement of form t1 join t2 on t3
+struct Join_on_tree : Tree {
+  Join_on_tree(const Token* k, Tree* t1, Tree* t2, Tree* t3)
+    : Tree(join_on_tree, k->loc), t1(t1), t2(t2), t3(t3) { }
+
+  Tree* t1;
+  Tree* t2;
+  Tree* t3;  
+};
+
+// A sql statement of form t1 union t2
+struct Union_tree : Tree {
+  Union_tree(Tree* t1, Tree* t2)
+    : Tree(union_tree, t1->loc), t1(t1), t2(t2) { }
+
+  Tree* t1;
+  Tree* t2;
+};
+
+// A sql statement of form t1 intersect t2
+struct Intersect_tree : Tree {
+  Intersect_tree(Tree* t1, Tree* t2)
+    : Tree(intersect_tree, t1->loc), t1(t1), t2(t2) { }
+
+  Tree* t1;
+  Tree* t2;
+};
+
+// A sql statement of form t2 except t2
+struct Except_tree : Tree {
+  Except_tree(Tree* t1, Tree* t2)
+    : Tree(except_tree, t1->loc), t1(t1), t2(t2) { }
+
+  Tree* t1;
+  Tree* t2;
+};
+
 // A variant of the form '<t1, ..., tn>' where each ti is a
 // a variable of the form 'x:T' or a member of the form 'x=t'.
 //
@@ -255,6 +327,50 @@ struct Prog_tree : Tree {
   Tree_seq* stmts() const { return t1; }
 
   Tree_seq* t1;
+};
+
+// t1 and t2
+struct And_tree : Tree {
+  And_tree(Tree* t1, Tree* t2)
+    : Tree(and_tree, t1->loc), t1(t1), t2(t2) { }
+
+  Tree* t1;
+  Tree* t2;
+};
+
+// t1 or t2
+struct Or_tree : Tree {
+  Or_tree(Tree* t1, Tree* t2)
+    : Tree(or_tree, t1->loc), t1(t1), t2(t2) { }
+
+  Tree* t1;
+  Tree* t2;
+};
+
+// not t1
+struct Not_tree : Tree {
+  Not_tree(const Token* k, Tree* t)
+    : Tree(not_tree, k->loc), t1(t) { }
+
+  Tree* t1;
+};
+
+// t1 == t2
+struct Eq_comp_tree : Tree {
+  Eq_comp_tree(Tree* t1, Tree* t2)
+    : Tree(eq_comp_tree, t1->loc), t1(t1), t2(t2) { }
+
+  Tree* t1;
+  Tree* t2;
+};
+
+// t1 < t2
+struct Less_tree : Tree {
+  Less_tree(Tree* t1, Tree* t2)
+    : Tree(less_tree, t1->loc), t1(t1), t2(t2) { }
+
+  Tree* t1;
+  Tree* t2;
 };
 
 // -------------------------------------------------------------------------- //

@@ -1,0 +1,6 @@
+def x = table [x1:Bool, x2:Nat, x3:Nat]
+{
+{x1 = true, x2 = succ(0), x3 = succ(0)},
+{x1 = false, x2 = succ(0), x3 = succ(0)}
+};
+print x;

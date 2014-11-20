@@ -884,6 +884,172 @@ elab_dot(Dot_tree* t) {
   return nullptr;
 }
 
+// Elaboration for the table term
+Expr*
+elab_select(Select_tree* t) {
+  Term_seq* projection = new Term_seq();
+  Term* table; //= elab_term(t->t2); 
+  //Term* check; //= elab_expr(t->t3);
+ 
+  //elaborate the projection definition
+  for(Tree* s0 : *t->t1) {
+    if(Term* attr = as<Var>(elab_term(as<Dot_tree>(s0)))) {
+      projection->push_back(attr);
+    }
+  }
+
+  //check that t2 has table type
+  if(table = as<Table>(elab_term(as<Table_tree>(t->t2)))) {
+      for(auto it_p = projection->begin(); it_p != projection->end(); ++it_p) {
+        if(!is_same(*it_p, table))
+          error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_p), pretty(table)); 
+      }
+  }
+
+    // Check that t3 has type Bool.
+  Term* t3 = elab_term(t->t3);
+  Type* bool_type = get_bool_type();
+  Type* typeBool = get_type(t3);
+  if (not is_same(typeBool, get_bool_type())) {
+    error(t->t3->loc);
+    return nullptr;
+  }
+
+  Type_seq* p_types = get_type(projection);
+  Table_type* t_type = new Table_type(get_kind_type(), p_types);
+  //return nullptr;
+  return new Select_from_where(t_type,projection,table,t3);
+}
+
+// Elaboration for the table term
+Expr*
+elab_table(Table_tree* t) {
+  Term_seq* schema = new Term_seq();
+  Term_seq* records = new Term_seq();
+
+  //elaborate the schema definition
+  for(Tree* s0 : *t->schema()) {
+    if(Term* attr = as<Var>(elab_term(s0)))
+      schema->push_back(attr);
+  }
+  //get the types of the schema attributes
+  Type_seq* s_types = get_type(schema);
+
+  //elaborate the records in the table
+  for(Tree* r0 : *t->records()) {
+    if(Record* record = as<Record>(elab_term(r0))) {
+      //confirm that the record has the same name and value type as the schema
+      //also confirm that the ordering of labels is the same
+      Type_seq* r_types = get_type(record->members());
+      //confirm that all the types match
+      auto it_s = s_types->begin();
+      for(auto it_r = r_types->begin(); it_r != r_types->end(); ++it_r) {
+        if(!is_same(*it_r, *it_s))
+          error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_r), pretty(*it_s)); 
+        ++it_s; 
+      }
+
+      //confirm that all the names match
+      auto schema_it = schema->begin();
+      for(auto it = record->members()->begin(); it != record->members()->end(); ++it) {
+        if( !is_same(as<Init>(*it)->name(), as<Var>(*schema_it)->name()) )
+          error(t->loc) << format("mismatched names '{0}' and '{1}'", 
+                                  pretty(as<Init>(*it)->name()), 
+                                  pretty(as<Var>(*schema_it)->name()));
+
+        ++schema_it;
+      }
+
+      records->push_back(record);
+    }
+  }
+
+  //construct the type for the table
+  //it has a type efined by its schema types
+  Table_type* t_type = new Table_type(get_kind_type(), s_types);
+
+  return new Table(t->loc, t_type, schema, records);
+}
+
+Expr*
+elab_and(And_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  // Check that t1 has type Bool.
+  Type* bool_type = get_bool_type();
+  Type* type1 = get_type(t1);
+  if (not is_same(type1, get_bool_type())) {
+    error(t1->loc) << 
+      format("term {} does not have type '{}'", typed(t1), pretty(bool_type));
+    return nullptr;
+  }
+
+  //Check that t2 has type Bool
+  Type* type2 = get_type(t2);
+  if (not is_same(type2, get_bool_type())) {
+    error(t2->loc) << 
+      format("term {} does not have type '{}'", typed(t2), pretty(bool_type));
+    return nullptr;
+  }
+
+  return new And(t1->loc, get_bool_type(), t1, t2);
+}
+
+Expr*
+elab_or(Or_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  // Check that t1 has type Bool.
+  Type* bool_type = get_bool_type();
+  Type* type1 = get_type(t1);
+  if (not is_same(type1, get_bool_type())) {
+    error(t1->loc) << 
+      format("term {} does not have type '{}'", typed(t1), pretty(bool_type));
+    return nullptr;
+  }
+
+  //Check that t2 has type Bool
+  Type* type2 = get_type(t2);
+  if (not is_same(type2, get_bool_type())) {
+    error(t2->loc) << 
+      format("term {} does not have type '{}'", typed(t2), pretty(bool_type));
+    return nullptr;
+  }
+
+  return new Or(t1->loc, get_bool_type(), t1, t2);
+}
+
+Expr*
+elab_not(Not_tree* t) {
+  Term* t1 = elab_term(t->t1);
+
+  // Check that t1 has type Bool.
+  Type* bool_type = get_bool_type();
+  Type* type1 = get_type(t1);
+  if (not is_same(type1, get_bool_type())) {
+    error(t1->loc) << 
+      format("term {} does not have type '{}'", typed(t1), pretty(bool_type));
+    return nullptr;
+  }
+
+  return new Not(t1->loc, get_bool_type(), t1);
+}
+
+Expr*
+elab_eq(Eq_comp_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+  return new Equals(t1->loc, get_bool_type(), t1, t2);
+}
+
+Expr*
+elab_less(Less_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+  return new Less(t1->loc, get_bool_type(), t1, t2);
+}
 
 // Elaborate a program. The result type of the entire program
 // is that of the last statement.
@@ -939,6 +1105,13 @@ elab_expr(Tree* t) {
   case typeof_tree: return elab_typeof(as<Typeof_tree>(t));
   case comma_tree: return elab_comma(as<Comma_tree>(t));
   case dot_tree: return elab_dot(as<Dot_tree>(t));
+  case table_tree: return elab_table(as<Table_tree>(t));
+  case select_tree: return elab_select(as<Select_tree>(t));
+  case and_tree: return elab_and(as<And_tree>(t));
+  case or_tree: return elab_or(as<Or_tree>(t));
+  case not_tree: return elab_not(as<Not_tree>(t));
+  case eq_comp_tree: return elab_eq(as<Eq_comp_tree>(t));
+  case less_tree: return elab_less(as<Less_tree>(t));
   case prog_tree: return elab_prog(as<Prog_tree>(t));
   default: break;
   }

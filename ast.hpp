@@ -23,6 +23,13 @@ constexpr Node_kind unit_term    = make_term_node(1);  // unit
 constexpr Node_kind true_term    = make_term_node(10); // true
 constexpr Node_kind false_term   = make_term_node(11); // false
 constexpr Node_kind if_term      = make_term_node(12); // if t1 then t2 else t3
+//Boolean operators
+constexpr Node_kind and_term     = make_term_node(13); // t1 and t2
+constexpr Node_kind or_term      = make_term_node(14); // t1 or t2
+constexpr Node_kind not_term     = make_term_node(15); // t1 not t2
+//Comparison operators
+constexpr Node_kind equals_term  = make_term_node(16); // t1 == t2
+constexpr Node_kind less_term    = make_term_node(17); // t1 < t2
 // Numeric terms
 constexpr Node_kind int_term     = make_term_node(20); // N
 constexpr Node_kind succ_term    = make_term_node(21); // succ t
@@ -47,6 +54,13 @@ constexpr Node_kind mem_term     = make_term_node(46); // t1.x
 // Declarations
 constexpr Node_kind def_term     = make_term_node(50); // def n = t
 constexpr Node_kind init_term    = make_term_node(51); // n = t
+// Tables, Table attributes, Relational Algebra
+constexpr Node_kind table_term   = make_term_node(60); // {{x1:T1 = v:T1, x2:T2 = v:T2, ...}, ...}
+constexpr Node_kind select_term  = make_term_node(61);
+constexpr Node_kind join_on_term = make_term_node(62);
+constexpr Node_kind union_term   = make_term_node(63); // t1 union t2
+constexpr Node_kind inter_term   = make_term_node(64); // t1 intersect t2
+constexpr Node_kind except_term  = make_term_node(65); // t1 except t2
 // Miscellaneous terms
 constexpr Node_kind ref_term     = make_term_node(100); // ref to decl
 constexpr Node_kind print_term   = make_term_node(101); // print t
@@ -57,6 +71,7 @@ constexpr Node_kind unit_type    = make_type_node(2);  // Unit
 constexpr Node_kind bool_type    = make_type_node(3);  // Bool
 constexpr Node_kind nat_type     = make_type_node(5);  // Nat
 constexpr Node_kind str_type     = make_type_node(6);  // Str
+constexpr Node_kind table_type   = make_type_node(11); // (l1:T1, ..., ln:Tn) {{l1:T1, ..., ln:Tn}, ...}
 constexpr Node_kind arrow_type   = make_type_node(20); // T -> U
 constexpr Node_kind fn_type      = make_type_node(21); // (T1, ..., Tn) -> U
 constexpr Node_kind tuple_type   = make_type_node(22); // {T1, ..., Tn}
@@ -72,6 +87,7 @@ constexpr Node_kind wild_type    = make_type_node(30); // *x:T
 struct Name;
 struct Type;
 struct Term;
+struct Cond;
 
 // Every distinct phrase in the language is an expression.
 //
@@ -174,6 +190,63 @@ struct Int : Term {
   const Integer& value() const { return t1; }
 
   Integer t1;
+};
+
+// Represents the boolean operator term t1 AND t2
+// t1 or t2 has to be type bool
+struct And :Term {
+  And(Type* t, Term* t1, Term* t2)
+    : Term(and_term, t), t1(t1), t2(t2) { }
+  And(const Location& l, Type* t, Term* t1, Term* t2)
+    : Term(and_term, l, t), t1(t1), t2(t2) { }
+
+  Term* t1;
+  Term* t2;
+};
+
+// Represents the boolean operator term t1 OR t2
+// t1 or t2 has to be of type bool
+struct Or :Term {
+  Or(Type* t, Term* t1, Term* t2)
+    : Term(or_term, t), t1(t1), t2(t2) { }
+  Or(const Location& l, Type* t, Term* t1, Term* t2)
+    : Term(or_term, l, t), t1(t1), t2(t2) { }
+
+  Term* t1;
+  Term* t2;
+};
+
+// Represents the boolean operator term not t1
+// t1 or t2 has to be of type bool
+struct Not :Term {
+  Not(Type* t, Term* t1)
+    : Term(not_term, t), t1(t1){ }
+  Not(const Location& l, Type* t, Term* t1)
+    : Term(not_term, l, t), t1(t1) { }
+
+  Term* t1;
+};
+
+// Represents the comparison operator term t1 == t2
+struct Equals :Term {
+  Equals(Type* t, Term* t1, Term* t2)
+    : Term(equals_term, t), t1(t1), t2(t2) { }
+  Equals(const Location& l, Type* t, Term* t1, Term* t2)
+    : Term(equals_term, l, t), t1(t1), t2(t2) { }
+
+  Term* t1;
+  Term* t2;
+};
+
+// Represents the comparison operator term t1 < t2
+struct Less :Term {
+  Less(Type* t, Term* t1, Term* t2)
+    : Term(less_term, t), t1(t1), t2(t2) { }
+  Less(const Location& l, Type* t, Term* t1, Term* t2)
+    : Term(less_term, l, t), t1(t1), t2(t2) { }
+
+  Term* t1;
+  Term* t2;
 };
 
 // Represents the term 'succ t'.
@@ -452,6 +525,102 @@ struct Prog : Term {
   Term_seq* t1;
 };
 
+// Table term for relation algebra
+// We define a table as have a schema and a set of records
+// Subterms of schema are of type Var (name: Type)
+// Subterms of records are of type Record
+struct Table : Term {
+  Table(Type* t, Term_seq* schema, Term_seq* rs)
+    : Term(table_term, t), t1(rs), ss(schema) {  
+      // assert that each element in ts has the same size as the schema
+      // assert that each elment in ts has the same labels as the schema
+  }
+  Table(const Location& l, Type* t, Term_seq* schema, Term_seq* rs)
+    : Term(table_term, l, t), t1(rs), ss(schema) {
+      // assert that each element in ts has the same size
+      // assert that each elment in ts has the same labels
+  }
+
+  Term_seq* members() const { return t1; }
+  Term_seq* schema() const { return ss; }
+
+  Term_seq* t1; // Records within the table. Contains record terms that match the schema
+  Term_seq* ss; // Schema definition containing Var terms
+};
+
+// select t1 from t2 where t3
+// t1 is a Comma term where each subterm is a Name
+// t2 is a Table term
+// t3 is anything that has type bool. Most commonly a term like and, or, equals, less, not
+struct Select_from_where : Term {
+  Select_from_where(Type* t, Term_seq* t1, Term* t2, Term* t3)
+    : Term(select_term, t), t1(t1), t2(t2), t3(t3) { }
+  Select_from_where(const Location& l, Type* t, Term_seq* t1, Term* t2, Term* t3)
+    : Term(select_term, l, t), t1(t1), t2(t2), t3(t3) { }
+
+  Term_seq* projection_list() const { return t1; }
+  Term* table() const { return t2; }
+  Term* conditions() const { return t3; }
+
+  Term_seq* t1;
+  Term* t2;
+  Term* t3;
+};
+
+// A term of form t1 join t2 on t3
+// Evaluates to be a table
+// t1 and t2 must have type table
+// t3 must evaluate to bool
+struct Join : Term {
+  Join(Type* t, Term* t1, Term* t2, Term* t3)
+    : Term(select_term, t), t1(t1), t2(t2), t3(t3) { }
+  Join(const Location& l, Type* t, Term* t1, Term* t2, Term* t3)
+    : Term(select_term, l, t), t1(t1), t2(t2), t3(t3){ }
+
+  Term* table_a() const { return t1; }
+  Term* table_b() const { return t2; }
+  Term* join_cond() const { return t3; }
+
+  Term* t1;
+  Term* t2;
+  Term* t3;
+};
+
+// t1 union t2
+// t1 and t2 is either a set, tuple, or table
+struct Union: Term {
+  Union(Type* t, Term* t1, Term* t2)
+    : Term(union_term, t), t1(t1), t2(t2) { }
+  Union(const Location&l, Type* t, Term* t1, Term* t2)
+    : Term(union_term, l, t), t1(t1), t2(t2) { }
+
+  Term* t1;
+  Term* t2;
+};
+
+// t1 intersect t2 
+// t1 and t2 is either a set, tuple, or table
+struct Intersect : Term {
+  Intersect(Type* t, Term* t1, Term* t2)
+    : Term(union_term, t), t1(t1), t2(t2) { }
+  Intersect(const Location&l, Type* t, Term* t1, Term* t2)
+    : Term(union_term, l, t), t1(t1), t2(t2) { }
+
+  Term* t1;
+  Term* t2;
+};
+
+// t1 except t2
+// t1 and t2 either a set, tuple, or table
+struct Except : Term {
+  Except(Type* t, Term* t1, Term* t2)
+    : Term(union_term, t), t1(t1), t2(t2) { }
+  Except(const Location&l, Type* t, Term* t1, Term* t2)
+    : Term(union_term, l, t), t1(t1), t2(t2) { }
+
+  Term* t1;
+  Term* t2;
+};
 
 // -------------------------------------------------------------------------- //
 // Types
@@ -563,6 +732,18 @@ struct Record_type : Type {
   Term_seq* t1;
 };
 
+// The type of a tuple has the form '[n1:T1, ..., nn:Tn]' 
+// where each ni:Ti is a member variable.
+//
+// Note that each sub-term is a Var term.
+struct Table_type : Type {
+  Table_type(Type* k, Type_seq* ts)
+    : Type(table_type, k), schema(ts) { }
+  Table_type(const Location& l, Type* k, Type_seq* ts)
+    : Type(table_type, l, k), schema(ts) { }
+
+  Type_seq* schema;
+};
 
 // A wildcard type of the form '*x:T' where 'x' is the name of the
 // the wildcard and T is its type. Wildcard types are used to represent
@@ -579,6 +760,8 @@ struct Wild_type : Type {
 
   Name* t1;
   Type* t2;
+  Type_seq* attr() const { return schema; }
+  Type_seq* schema;
 };
 
 

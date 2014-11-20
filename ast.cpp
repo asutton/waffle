@@ -26,6 +26,12 @@ init_nodes() {
   init_node(comma_term, "comma");
   init_node(proj_term, "proj");
   init_node(mem_term, "mem");
+  init_node(table_term, "table");
+  init_node(and_term, "and");
+  init_node(or_term, "or");
+  init_node(not_term, "not");
+  init_node(equals_term, "eq");
+  init_node(less_term, "lt");
   // Types
   init_node(kind_type, "kind-type");
   init_node(unit_type, "unit-type");
@@ -161,6 +167,12 @@ pp_record(std::ostream& os, Record* t) {
 }
 
 void
+pp_table(std::ostream& os, Table* t) {
+  os << '[' << commas(t->schema()) << "]\n";
+  os << '{' << commas(t->members()) << "}\n";
+}
+
+void
 pp_comma(std::ostream& os, Comma* t) {
   os << '(' << commas(t->elems()) << ')';
 }
@@ -201,6 +213,31 @@ void
 pp_prog(std::ostream& os, Prog* t) {
   for (Term* s : *t->stmts())
     os << pretty(s) << ';' << '\n';
+}
+
+void
+pp_and(std::ostream& os, And* t) {
+  os << pretty(t->t1) << " and " << pretty(t->t2);
+}
+
+void
+pp_or(std::ostream& os, Or* t) {
+  os << pretty(t->t1) << " or " << pretty(t->t2);
+}
+
+void
+pp_not(std::ostream& os, Not* t) {
+  os << "not " << pretty(t->t1);
+}
+
+void
+pp_equals(std::ostream& os, Equals* t) {
+  os << pretty(t->t1) << " == " << pretty(t->t2);
+}
+
+void
+pp_less(std::ostream& os, Less* t) {
+  os << pretty(t->t1) << " < " << pretty(t->t2);
 }
 
 void
@@ -275,6 +312,12 @@ pp_expr(std::ostream& os, Node* t) {
   case proj_term: return pp_proj(os, as<Proj>(t));
   case print_term: return pp_print(os, as<Print>(t));
   case prog_term: return pp_prog(os, as<Prog>(t));
+  case table_term: return pp_table(os, as<Table>(t));
+  case and_term: return pp_and(os, as<And>(t));
+  case or_term: return pp_or(os, as<Or>(t));
+  case not_term: return pp_not(os, as<Not>(t));
+  case equals_term: return pp_equals(os, as<Equals>(t));
+  case less_term: return pp_less(os, as<Less>(t));
   // Types
   case unit_type: return pp_string(os, "Unit");
   case bool_type: return pp_string(os, "Bool");

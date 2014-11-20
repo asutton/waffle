@@ -104,6 +104,11 @@ subst(Expr* e, const Subst& sub) {
   case false_term: return e;
   case if_term: return subst_ternary_term(as<If>(e), sub);
   case int_term: return e;
+  case and_term: return subst_binary_term(as<And>(e), sub);
+  case or_term: return subst_binary_term(as<And>(e), sub);
+  case equals_term: return subst_binary_term(as<And>(e), sub);
+  case less_term: return subst_binary_term(as<And>(e), sub);
+  case not_term: return subst_unary_term(as<Not>(e), sub);
   case succ_term: return subst_unary_term(as<Succ>(e), sub);
   case pred_term: return subst_unary_term(as<Pred>(e), sub);
   case iszero_term: return subst_unary_term(as<Iszero>(e), sub);
