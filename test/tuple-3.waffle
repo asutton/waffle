@@ -1,0 +1,3 @@
+
+def x = {};
+print typeof x;

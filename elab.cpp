@@ -687,14 +687,16 @@ elab_record_type(Tuple_tree* t, Var* t0) {
 }
 
 // Elaborate a tuple expression. Note that there are many
-// forms that this tuple can represent. 
+// forms that this tuple can represent. These are:
 //
-// FIXME: What should we do about an empty tuple?
+//    - {} is the empty tuple. Note that this is always a term.
+//
+// FIXME: How do we parse the type of the empty tuple.
 Expr*
 elab_tuple(Tuple_tree* t) {
   if (t->elems()->empty()) {
-    error(t->loc) << format("empty tuple or record expression '{}'", pretty(t));
-    return nullptr;
+    Tuple_type* type = new Tuple_type(get_kind_type(), new Type_seq());
+    return new Tuple(t->loc, type, new Term_seq());
   }
 
   // Elaborate the first element of the tuple. It determines

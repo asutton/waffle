@@ -259,10 +259,20 @@ parse_elem_list(Parser& p, Token_kind close_tok) {
 
 // Parse a comma-separated sequence of expressions that are by a 
 // enclosed by pair of tokens.
+//
+//    enclosed-seq(open, close) ::= open [elem-seq]?  close
+//
+// Here 'open' and 'close' are tokens represening the opening and
+// closing tokens of the enclosed sequence. Note that the sequence
+// may be empty.
 template<typename T>
   Tree*
-  parse_enclosed_expr(Parser& p, Token_kind open_tok, Token_kind close_tok) {
+  parse_enclosed_seq(Parser& p, Token_kind open_tok, Token_kind close_tok) {
     if (const Token* k = parse::accept(p, open_tok)) {
+
+      if (parse::accept (p, close_tok))
+        return new T(k, new Tree_seq());
+
       if (Tree_seq* ts = parse_elem_list(p, close_tok)) {
         if (parse::expect(p, close_tok))
           return new T(k, ts);
@@ -278,9 +288,14 @@ template<typename T>
 // Parse a tuple expression.
 //
 //    tuple-expr ::= '{' t1, ..., tn '}'
+//
+// TODO: There is currently no way to distinguish between the type of
+// the empty tuple and its value. There are at least two reasonable
+// solutions: allow the empty tuple to be used in place of a type, or
+// provide explicit syntax for differentiating the two.
 Tree*
 parse_tuple_expr(Parser& p) {
-  return parse_enclosed_expr<Tuple_tree>(p, lbrace_tok, rbrace_tok);
+  return parse_enclosed_seq<Tuple_tree>(p, lbrace_tok, rbrace_tok);
 }
 
 // Parse a list expression.
@@ -288,7 +303,7 @@ parse_tuple_expr(Parser& p) {
 //    list-expr ::= '[' t1, ..., tn ']'
 Tree*
 parse_list_expr(Parser& p) {
-  return parse_enclosed_expr<List_tree>(p, lbracket_tok, rbracket_tok);
+  return parse_enclosed_seq<List_tree>(p, lbracket_tok, rbracket_tok);
 }
 
 // Parse a variant expression.
@@ -296,7 +311,7 @@ parse_list_expr(Parser& p) {
 //    tuple-expr ::= '<' t1, ..., tn '>'
 Tree*
 parse_variant_expr(Parser& p) {
-  parse_enclosed_expr<Variant_tree>(p, langle_tok, rangle_tok);
+  parse_enclosed_seq<Variant_tree>(p, langle_tok, rangle_tok);
 }
 
 // Parse a grouped expression.
