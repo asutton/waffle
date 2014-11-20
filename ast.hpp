@@ -63,6 +63,7 @@ constexpr Node_kind tuple_type   = make_type_node(22); // {T1, ..., Tn}
 constexpr Node_kind list_type    = make_type_node(23); // [T]
 constexpr Node_kind record_type  = make_type_node(24); // {l1:T1, ..., ln:Tn}
 constexpr Node_kind variant_type = make_type_node(25); // <l1:T1, ..., ln:Tn>
+constexpr Node_kind wild_type    = make_type_node(30); // *x:T
 
 
 // -------------------------------------------------------------------------- //
@@ -560,6 +561,24 @@ struct Record_type : Type {
   Term_seq* members() const { return t1; }
 
   Term_seq* t1;
+};
+
+
+// A wildcard type of the form '*x:T' where 'x' is the name of the
+// the wildcard and T is its type. Wildcard types are used to represent
+// the type of a term when its complete type must be deduced from
+// context.
+struct Wild_type : Type {
+  Wild_type(Type* k, Name* n, Type* t)
+    : Type(wild_type, k), t1(n), t2(t) { }
+  Wild_type(const Location& loc, Type* k, Name* n, Type* t)
+    : Type(wild_type, loc, k), t1(n), t2(t) { }
+
+  Name* name() const { return t1; }
+  Type* type() const { return t2; }
+
+  Name* t1;
+  Type* t2;
 };
 
 

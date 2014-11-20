@@ -228,6 +228,15 @@ pp_record_type(std::ostream& os, Record_type* t) {
   os << '{' << commas(t->members()) << '}';
 }
 
+// Print the wildcard type. Omit the explicit type qualifier
+// if the wildcard is actually a type variable.
+void
+pp_wild_type(std::ostream& os, Wild_type* t) {
+  os << '*' << pretty(t->name());
+  if (not is_kind(t->type()))
+     os << ':' << pretty(t->type());
+}
+
 } // namespace
 
 // Render the given term into the output stream.
@@ -276,6 +285,7 @@ pp_expr(std::ostream& os, Node* t) {
   case tuple_type: return pp_tuple_type(os, as<Tuple_type>(t));
   case list_type: return pp_list_type(os, as<List_type>(t));
   case record_type: return pp_record_type(os, as<Record_type>(t));
+  case wild_type: return pp_wild_type(os, as<Wild_type>(t));
   default: break;
   }
   lang_unreachable(format("print unknown node '{}'", node_name(t)));

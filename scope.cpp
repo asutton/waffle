@@ -4,6 +4,8 @@
 #include "lang/error.hpp"
 #include "lang/debug.hpp"
 
+#include <sstream>
+
 namespace {
 
 // The global current scope.
@@ -74,4 +76,12 @@ lookup(Name* n) {
     s = s->parent;
   }
   return nullptr;
+}
+
+// Create a fresh name for this scope.
+Name*
+fresh_name() {
+  std::stringstream ss;
+  ss << 'a' << ++current_scope()->counter;
+  return new Id(ss.str());
 }

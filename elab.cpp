@@ -760,6 +760,7 @@ elab_list(List_tree* t, Term* t0) {
 // Elaborate a list of expressions. The elaboration depends on the
 // form of the list. When the list has the form
 //
+//  - [], this is the empty list with type [*x]
 //  - [T] where T is a type, this is the list type [T].
 //  - [t1, ..., tn] where each ti is a term whose type is T, then
 //    this is the a list whose type is [T].
@@ -772,8 +773,11 @@ elab_list(List_tree* t, Term* t0) {
 Expr*
 elab_list(List_tree *t) {
   if (t->elems()->empty()) {
-    error(t->loc) << format("empty list expression '{}'", pretty(t));
-    return nullptr;
+    Name* n = fresh_name();
+    Type* wild = new Wild_type(get_kind_type(), n, get_kind_type());
+    Type* type = new List_type(get_kind_type(), wild);
+    Term* list = new List(type, new Term_seq());
+    return list;
   }
 
   Expr* expr = elab_expr(t->elems()->front());

@@ -44,7 +44,7 @@ get_str_type() { return str_type_; }
 // Typing
 
 bool
-is_type(Expr* t) { return is<Type>(t); }
+is_type(Expr* e) { return is<Type>(e); }
 
 // Returns true if t is the unit type.
 bool
@@ -65,6 +65,10 @@ is_str_type(Type* t) { return t->kind == str_type; }
 // Returns true if t is an arrow type.
 bool 
 is_arrow_type(Type* t) { return t->kind == arrow_type; }
+
+// Returns true if t is the kind of a type.
+bool
+is_kind(Expr* e) { return e->kind == kind_type; }
 
 
 // Returns the type of an expression.

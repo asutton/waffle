@@ -19,6 +19,7 @@ bool is_bool_type(Type*);
 bool is_nat_type(Type*);
 bool is_str_type(Type*);
 bool is_arrow_type(Type*);
+bool is_kind(Expr*);
 
 Type* get_type(Expr*);
 Type_seq* get_type(Term_seq*);

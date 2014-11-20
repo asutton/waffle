@@ -18,12 +18,13 @@ enum Scope_kind {
 // as a declaration corresponding to that name is searched for.
 struct Scope : std::map<Name*, Expr*, Expr_less> {
   Scope(Scope_kind k)
-    : kind(k), parent(nullptr) { }
+    : kind(k), parent(nullptr), counter(0) { }
   Scope(Scope_kind k, Scope* p)
-    : kind(k), parent(p) { }
+    : kind(k), parent(p), counter(0) { }
 
   Scope_kind kind;
   Scope* parent;
+  int counter;
 };
 
 void push_scope(Scope_kind);
@@ -36,6 +37,8 @@ bool in_lambda_scope();
 Expr* declare(Name*, Expr*);
 Expr* declare(Expr*);
 Expr* lookup(Name*);
+
+Name* fresh_name();
 
 // A helper class that guarantees that a scope is popped
 // when it goes out of scope.

@@ -1,0 +1,6 @@
+
+def x = [];
+def y = [];
+
+print typeof x;
+print typeof y;
