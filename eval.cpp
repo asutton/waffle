@@ -419,9 +419,21 @@ eval_intersect(Intersect* t) {
   Term* t2 = eval(t->t2);
   Term_seq* e2 = as<List>(t2)->elems();
   //perform intersect
+  Term_seq* u = new Term_seq();
+  for(auto re1 : *e1) {
+    bool contained = false;
+    for(auto re2: *e2) {
+      if(is_same(re1, re2)) {
+        contained = true;
+        break;
+      }
+    }
+    if(contained)
+      u->push_back(re1);
+  }
 
   //remove duplicates
-  return new List(get_type(t1), e1);
+  return new List(get_type(t1), u);
 }
 
 //Assum t1 and t2 are both lists
@@ -462,9 +474,21 @@ eval_except(Except* t) {
   Term* t2 = eval(t->t2);
   Term_seq* e2 = as<List>(t2)->elems();
   //perform except
+  Term_seq* u = new Term_seq();
+  for(auto re1 : *e1) {
+    bool contained = false;
+    for(auto re2: *e2) {
+      if(is_same(re1, re2)) {
+        contained = true;
+        break;
+      }
+    }
+    if(!contained)
+      u->push_back(re1);
+  }
 
   //remove duplicates
-  return new List(get_type(t1), e1);
+  return new List(get_type(t1), u);
 }
 
 } // namespace
@@ -494,7 +518,7 @@ eval(Term* t) {
   case select_term: return eval_select_from_where(as<Select_from_where>(t));
   case join_on_term: return eval_join(as<Join>(t));
   case union_term: return eval_union(as<Union>(t));
-  case inter_term: return eval_intersect(as<Intersect>(t));
+  case intersect_term: return eval_intersect(as<Intersect>(t));
   case except_term: return eval_except(as<Except>(t));
   default: break;
   }

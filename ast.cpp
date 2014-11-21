@@ -283,6 +283,16 @@ pp_union(std::ostream& os, Union* t) {
   os << pretty(t->t1) << " union " << pretty(t->t2);
 }
 
+void
+pp_intersect(std::ostream& os, Intersect* t) {
+  os << pretty(t->t1) << " intersect " << pretty(t->t2);
+}
+
+void
+pp_except(std::ostream& os, Except* t) {
+  os << pretty(t->t1) << " except " << pretty(t->t2);
+}
+
 // Print the wildcard type. Omit the explicit type qualifier
 // if the wildcard is actually a type variable.
 void
@@ -338,6 +348,8 @@ pp_expr(std::ostream& os, Node* t) {
   case less_term: return pp_less(os, as<Less>(t));
   case select_term: return pp_select(os, as<Select_from_where>(t));
   case union_term: return pp_union(os, as<Union>(t));
+  case intersect_term: return pp_intersect(os, as<Intersect>(t));
+  case except_term: return pp_except(os, as<Except>(t));
   // Types
   case unit_type: return pp_string(os, "Unit");
   case bool_type: return pp_string(os, "Bool");

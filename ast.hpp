@@ -59,7 +59,7 @@ constexpr Node_kind table_term   = make_term_node(60); // {{x1:T1 = v:T1, x2:T2 
 constexpr Node_kind select_term  = make_term_node(61);
 constexpr Node_kind join_on_term = make_term_node(62);
 constexpr Node_kind union_term   = make_term_node(63); // t1 union t2
-constexpr Node_kind inter_term   = make_term_node(64); // t1 intersect t2
+constexpr Node_kind intersect_term = make_term_node(64); // t1 intersect t2
 constexpr Node_kind except_term  = make_term_node(65); // t1 except t2
 // Miscellaneous terms
 constexpr Node_kind ref_term     = make_term_node(100); // ref to decl
@@ -602,9 +602,9 @@ struct Union: Term {
 // t1 and t2 is either a set, tuple, or table
 struct Intersect : Term {
   Intersect(Type* t, Term* t1, Term* t2)
-    : Term(union_term, t), t1(t1), t2(t2) { }
+    : Term(intersect_term, t), t1(t1), t2(t2) { }
   Intersect(const Location&l, Type* t, Term* t1, Term* t2)
-    : Term(union_term, l, t), t1(t1), t2(t2) { }
+    : Term(intersect_term, l, t), t1(t1), t2(t2) { }
 
   Term* t1;
   Term* t2;
@@ -614,9 +614,9 @@ struct Intersect : Term {
 // t1 and t2 either a set, tuple, or table
 struct Except : Term {
   Except(Type* t, Term* t1, Term* t2)
-    : Term(union_term, t), t1(t1), t2(t2) { }
+    : Term(except_term, t), t1(t1), t2(t2) { }
   Except(const Location&l, Type* t, Term* t1, Term* t2)
-    : Term(union_term, l, t), t1(t1), t2(t2) { }
+    : Term(except_term, l, t), t1(t1), t2(t2) { }
 
   Term* t1;
   Term* t2;
