@@ -553,16 +553,16 @@ struct Table : Term {
 // t2 is a Table term
 // t3 is anything that has type bool. Most commonly a term like and, or, equals, less, not
 struct Select_from_where : Term {
-  Select_from_where(Type* t, Term_seq* t1, Term* t2, Term* t3)
+  Select_from_where(Type* t, Term* t1, Term* t2, Term* t3)
     : Term(select_term, t), t1(t1), t2(t2), t3(t3) { }
-  Select_from_where(const Location& l, Type* t, Term_seq* t1, Term* t2, Term* t3)
+  Select_from_where(const Location& l, Type* t, Term* t1, Term* t2, Term* t3)
     : Term(select_term, l, t), t1(t1), t2(t2), t3(t3) { }
 
-  Term_seq* projection_list() const { return t1; }
+  Term* projection_list() const { return t1; }
   Term* table() const { return t2; }
   Term* conditions() const { return t3; }
 
-  Term_seq* t1;
+  Term* t1;
   Term* t2;
   Term* t3;
 };

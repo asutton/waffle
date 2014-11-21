@@ -89,7 +89,7 @@ elab_term(Tree* t) {
 // -------------------------------------------------------------------------- //
 // Elaboration rules
 
-// Elaborate an id by looking it up in the current context.
+// Elaborate an id by looking it up in the current cntext.
 //
 //    n : T in G
 //    ---------- T-id
@@ -856,6 +856,12 @@ elab_mem(Dot_tree* t, Term* t1, Term* t2, Record_type* rec_type) {
   return new Unit(t->loc, get_unit_type());
 }
 
+// FIXME: Implement me three.
+Expr*
+elab_col(Dot_tree* t, Term* t1, Term* t2, Table_type* table_type) {
+  return new Unit(t->loc, get_unit_type());
+}
+
 // Elaborate a dotted access expression. Note that the elaboration
 // depends on the type of the object.
 //
@@ -879,6 +885,8 @@ elab_dot(Dot_tree* t) {
     return elab_proj(t, t1, t2, tup);
   if (Record_type* rec = as<Record_type>(type))
     return elab_mem(t, t1, t2, rec);
+  if(Table_type* tab = as<Table_type>(type))
+    return elab_col(t, t1, t2, tab);
 
   error(t1->loc) << format("'{}' is not a tuple or record", pretty(t1));
   return nullptr;
@@ -887,38 +895,48 @@ elab_dot(Dot_tree* t) {
 // Elaboration for the table term
 Expr*
 elab_select(Select_tree* t) {
-  Term_seq* projection = new Term_seq();
-  Term* table; //= elab_term(t->t2); 
-  //Term* check; //= elab_expr(t->t3);
- 
-  //elaborate the projection definition
-  for(Tree* s0 : *t->t1) {
-    if(Term* attr = as<Var>(elab_term(as<Dot_tree>(s0)))) {
-      projection->push_back(attr);
-    }
-  }
-
-  //check that t2 has table type
-  if(table = as<Table>(elab_term(as<Table_tree>(t->t2)))) {
-      for(auto it_p = projection->begin(); it_p != projection->end(); ++it_p) {
-        if(!is_same(*it_p, table))
-          error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_p), pretty(table)); 
-      }
-  }
-
-    // Check that t3 has type Bool.
+  
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
   Term* t3 = elab_term(t->t3);
-  Type* bool_type = get_bool_type();
-  Type* typeBool = get_type(t3);
-  if (not is_same(typeBool, get_bool_type())) {
-    error(t->t3->loc);
-    return nullptr;
-  }
 
-  Type_seq* p_types = get_type(projection);
-  Table_type* t_type = new Table_type(get_kind_type(), p_types);
+  ///////////////////////
+  //This method doesnt really work because we dont know if t1 is always a list
+  //it might just be one name then this would fail
+  ///////////////////////
+
+  // Term_seq* projection = new Term_seq();
+  // Term* table; //= elab_term(t->t2); 
+  // //Term* check; //= elab_expr(t->t3);
+ 
+  // //elaborate the projection definition
+  // for(Tree* s0 : *t->t1) {
+  //   if(Term* attr = as<Var>(elab_term(as<Dot_tree>(s0)))) {
+  //     projection->push_back(attr);
+  //   }
+  // }
+
+  // //check that t2 has table type
+  // if(table = as<Table>(elab_term(as<Table_tree>(t->t2)))) {
+  //     for(auto it_p = projection->begin(); it_p != projection->end(); ++it_p) {
+  //       if(!is_same(*it_p, table))
+  //         error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_p), pretty(table)); 
+  //     }
+  // }
+
+  //   // Check that t3 has type Bool.
+  // Term* t3 = elab_term(t->t3);
+  // Type* bool_type = get_bool_type();
+  // Type* typeBool = get_type(t3);
+  // if (not is_same(typeBool, get_bool_type())) {
+  //   error(t->t3->loc);
+  //   return nullptr;
+  // }
+
+  // Type_seq* p_types = get_type(projection);
+  // Table_type* t_type = new Table_type(get_kind_type(), p_types);
   //return nullptr;
-  return new Select_from_where(t_type,projection,table,t3);
+  return new Select_from_where(get_kind_type(), t1, t2, t3);
 }
 
 // Elaboration for the table term
@@ -976,22 +994,13 @@ elab_union(Union_tree* t) {
   Term* t1 = elab_term(t->t1);
   Term* t2 = elab_term(t->t2);
 
-  //check that t1 and t2 are Type_seq or table
-  if (Type_seq* type1 = get_type(as<Table>(t1)->members())) {
-    if (Type_seq* type2 = get_type(as<Table>(t2)->members())) {
-      //confirm that all the types match
-      auto it_t2 = type2->begin();
-      for(auto it_t1 = type1->begin(); it_t1 != type1->end(); ++it_t1) {
-        if(!is_same(*it_t1, *it_t2))
-          error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_t1), pretty(*it_t2));
-        ++it_t2;
-      }
-    }
-    else
-      error(t2->loc) << format("mismatched types'", typed(t2));
-  }
-  else
-    error(t1->loc) << format("mismatched types'", typed(t1));
+  Type* type_t1 = get_type(as<Def>(as<Ref>(t1)->decl())->value());
+  Type* type_t2 = get_type(as<Def>(as<Ref>(t2)->decl())->value());
+
+  if(!is_same(type_t1, type_t2))
+    error(t->loc) << format("mismatched types '{0}' and '{1}'", 
+                            pretty(type_t1), 
+                            pretty(type_t2));
 
   Type* type1 = get_type(t1);
   return new Union(type1, t1, t2);
@@ -1148,6 +1157,7 @@ elab_expr(Tree* t) {
   case not_tree: return elab_not(as<Not_tree>(t));
   case eq_comp_tree: return elab_eq(as<Eq_comp_tree>(t));
   case less_tree: return elab_less(as<Less_tree>(t));
+  case union_tree: return elab_union(as<Union_tree>(t));
   case prog_tree: return elab_prog(as<Prog_tree>(t));
   default: break;
   }

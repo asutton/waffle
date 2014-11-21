@@ -376,61 +376,25 @@ eval_less(Less* t) {
 // Returns a term from the record such that the label in the record matches l
 // Returns nullptr if the label l does not match anything in record r
 Term*
-eval_record_project(Term* l, Record* r) {
+eval_mem(Mem* t) {
   //TODO: Test this. Probably shady.
-  for(auto t : *(r->members())) {
-    if( is_same(as<Name>(l), as<Init>(t)->name()) ) {
-      return as<Term>(as<Init>(t)->value());
-    }
-  }
-  return nullptr;
+  // for(auto r : *(t->t1->members())) {
+  //   if( is_same(as<Name>(r->l), as<Init>(r->t)->name()) ) {
+  //     return as<Term>(as<Init>(t)->value());
+  //   }
+  // }
+  // return nullptr;
 }
 
-// Perform projection a table's columns
-// project should be a Comma term where each subterm is of type Init
-Term*
-eval_table_project(Comma* project, Table* t) {
-  //TODO: Implement
-  return t;
-}
-
-// Evaluate 
 Term*
 eval_proj(Proj* t) {
-  //TODO Implement
-}
-
-// Evaluation for Mem term
-Term*
-eval_mem(Mem* t) {
-  switch(t->record()->kind) {
-  case record_term: eval_record_project(eval(t->member()), as<Record>(eval(t->record())));
-  case table_term:  eval_table_project(as<Comma>(eval(t->member())), as<Table>(eval(t->record())));
-  }
-}
-
-Term*
-eval_table_select(Term* cond, Table* t) {
-  Term_seq records = *(t->members());
-  Table* result;
-  for (auto r : records){
-    //every value in r needs to be subsituted through cond
-    //evaluate cond
-    //if cond is true we add the record to the resulting table
-    //else ignore
-  } //not done
-}
-
-Term*
-eval_table_product(Table* t1, Table* t2) {
-
+  
 }
 
 //evaluation for select t1 from t2 where t3
 Term*
 eval_select_from_where(Select_from_where* t) {
   //perform selection
-  Table* table = as<Table>(eval_table_select(t->t3, as<Table>(t->t2)));
   //perform projection
     //first we need to eval all the terms in t1 (the comma list)
   //populate new table
@@ -446,89 +410,56 @@ eval_join(Join* t) {
   //ereturn new table
 }
 
-// Returns the intersection of two tables
-// TODO: test this
-Term*
-eval_intersect_table(Table* t1, Table* t2) {
-  Table* result;
-  for(auto r1 : *(t1->members())) {
-    for(auto r2 : *(t2->members())) {
-      if(is_same(r1, r2)) {
-        result->t1->push_back(r1);
-      }
-    }
-  }
-  return result;
-}
-
 Term*
 eval_intersect(Intersect* t) {
   //eval t1
   Term* t1 = eval(t->t1);
+  Term_seq* e1 = as<List>(t1)->elems();
   //eval t2
   Term* t2 = eval(t->t2);
-  //perform intersection
-  switch(t1->kind) {
-  case table_term: return eval_intersect_table(as<Table>(t1), as<Table>(t2));
-  }
+  Term_seq* e2 = as<List>(t2)->elems();
+  //perform intersect
+
+  //remove duplicates
+  return new List(get_type(t1), e1);
 }
 
-// TODO: test this
-Term*
-eval_union_table(Table* t1, Table* t2) {
-  Term_seq* schema = new Term_seq(*(t1->schema()));
-  Term_seq* records = new Term_seq(*(t1->members()));
-  for(auto r : *(t2->members())) {
-    records->push_back(r);
-  }
-  //remove duplicates by converting to set then back
-  std::set<Term*> s(records->begin(), records->end());
-  records->assign(s.begin(), s.end());
-
-  return new Table(get_kind_type(), schema, records);
-}
-
+//Assum t1 and t2 are both lists
 Term*
 eval_union(Union* t) {
   //eval t1
   Term* t1 = eval(t->t1);
+  Term_seq* e1 = as<List>(t1)->elems();
   //eval t2
   Term* t2 = eval(t->t2);
-  //perform union
-  switch(t1->kind) {
-  case table_term: return eval_union_table(as<Table>(t1), as<Table>(t2));
-  }
-}
+  Term_seq* e2 = as<List>(t2)->elems();
 
-// TODO: test this
-Term*
-eval_except_table(Table* t1, Table* t2) {
-  Term_seq* diff;
-  Term_seq* schema = new Term_seq(*(t1->schema()));
-  for(auto r1 : *(t1->members())) {
-    bool r2_contains = false;
-    for(auto r2 : *(t2->members())) {
-      if(is_same(r1, r2)) {
-        r2_contains = true;
+  //perform union
+  Term_seq* u = new Term_seq();
+  u->assign(e1->begin(), e1->end());
+  for(auto e0 : *e2) {
+    for(auto elem : *u) {
+      if(!is_same(e0, elem)) {
+        u->push_back(e0);
       }
     }
-    if(!r2_contains) {
-      diff->push_back(r1);
-    }
   }
-  return new Table(get_kind_type(), schema, diff);
+  return new List(get_type(t1), e1);
 }
 
+//Assume t1 and t2 are both lists
 Term*
 eval_except(Except* t) {
   //eval t1
   Term* t1 = eval(t->t1);
+  Term_seq* e1 = as<List>(t1)->elems();
   //eval t2
   Term* t2 = eval(t->t2);
-  //perform difference
-  switch(t1->kind) {
-  case table_term: return eval_except_table(as<Table>(t1), as<Table>(t2));
-  }
+  Term_seq* e2 = as<List>(t2)->elems();
+  //perform except
+
+  //remove duplicates
+  return new List(get_type(t1), e1);
 }
 
 } // namespace

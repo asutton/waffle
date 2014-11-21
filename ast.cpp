@@ -265,6 +265,18 @@ pp_record_type(std::ostream& os, Record_type* t) {
   os << '{' << commas(t->members()) << '}';
 }
 
+void
+pp_select(std::ostream& os, Select_from_where* t) {
+  os << "select " << pretty(t->t1) 
+     << " from " << pretty(t->t2) 
+     << " where " << pretty(t->t3);
+}
+
+void
+pp_union(std::ostream& os, Union* t) {
+  os << pretty(t->t1) << " union " << pretty(t->t2);
+}
+
 // Print the wildcard type. Omit the explicit type qualifier
 // if the wildcard is actually a type variable.
 void
@@ -318,6 +330,8 @@ pp_expr(std::ostream& os, Node* t) {
   case not_term: return pp_not(os, as<Not>(t));
   case equals_term: return pp_equals(os, as<Equals>(t));
   case less_term: return pp_less(os, as<Less>(t));
+  case select_term: return pp_select(os, as<Select_from_where>(t));
+  case union_term: return pp_union(os, as<Union>(t));
   // Types
   case unit_type: return pp_string(os, "Unit");
   case bool_type: return pp_string(os, "Bool");

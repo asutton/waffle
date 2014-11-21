@@ -238,10 +238,10 @@ struct Table_tree : Tree {
 
 // A sql statement of form select t1 from t2 where t3 
 struct Select_tree : Tree {
-  Select_tree(const Token* k, Tree_seq* t1, Tree* t2, Tree* t3) 
+  Select_tree(const Token* k, Tree* t1, Tree* t2, Tree* t3) 
     : Tree(select_tree, k->loc), t1(t1), t2(t2), t3(t3) { }
 
-  Tree_seq* t1;
+  Tree* t1;
   Tree* t2;
   Tree* t3;
 };
