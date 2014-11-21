@@ -388,7 +388,7 @@ eval_mem(Mem* t) {
 
 Term*
 eval_proj(Proj* t) {
-  
+
 }
 
 //evaluation for select t1 from t2 where t3
@@ -438,13 +438,18 @@ eval_union(Union* t) {
   Term_seq* u = new Term_seq();
   u->assign(e1->begin(), e1->end());
   for(auto e0 : *e2) {
+    bool contained = false;
     for(auto elem : *u) {
-      if(!is_same(e0, elem)) {
-        u->push_back(e0);
-      }
+      //if we find it in the union set already break
+      if(is_same(e0, elem)) {
+        contained = true;
+        break;
+      } 
     }
+    if(!contained)
+      u->push_back(e0);
   }
-  return new List(get_type(t1), e1);
+  return new List(get_type(t1), u);
 }
 
 //Assume t1 and t2 are both lists
