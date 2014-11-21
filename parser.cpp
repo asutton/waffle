@@ -524,17 +524,13 @@ parse_join_on(Parser& p, Tree* t1) {
 Tree*
 parse_select(Parser& p) {
     if(const Token* s = parse::accept(p, select_tok)) {
-      if (Tree_seq* t1 = parse_parm_list(p)) {
-          if(const Token* s = parse::accept(p, from_tok)) {
-            if (Tree* t2 = parse_expr(p)) {
-              if(const Token* s = parse::accept(p, where_tok)) {
-                if (Tree* t3 = parse_expr(p)) {
+      if (parse::accept(p, lparen_tok)) 
+        if (Tree_seq* t1 = parse_elem_list(p, rparen_tok)) 
+          if(const Token* f = parse::accept(p, from_tok)) 
+            if (Tree* t2 = parse_expr(p)) 
+              if(const Token* w = parse::accept(p, where_tok)) 
+                if (Tree* t3 = parse_expr(p)) 
                     return new Select_tree(s,t1,t2,t3);
-                }
-              }
-            }
-          }
-      }
     }
     return nullptr;
 }
