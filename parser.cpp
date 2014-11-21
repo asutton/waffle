@@ -522,10 +522,10 @@ parse_except(Parser& p, Tree* t1) {
 // Parse Join.
 // stm t1 join t2
 Tree*
-parse_join_on(Parser& p, Tree* t1) {
+parse_join(Parser& p, Tree* t1) {
     if(const Token* s = parse::accept(p, join_tok)) {
       if(Tree* t2 = parse_expr(p))
-        if(parse::accept(p, on_tok)) 
+        if(parse::expect(p, on_tok)) 
           if(Tree* t3 = parse_expr(p))
             return new Join_on_tree(s,t1,t2,t3);
           else
@@ -562,6 +562,8 @@ parse_postfix_expr(Parser& p) {
       else if (Tree* t2 = parse_intersect(p, t1))
         t1 = t2;
       else if (Tree* t2 = parse_except(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_join(p, t1))
         t1 = t2;
       else 
         break;
@@ -793,9 +795,6 @@ parse_def(Parser& p) {
   return nullptr;
 }
 
-
-
-
 // Parse a statement.
 //
 //    stmt ::= def-stmt | expr-stmt
@@ -805,8 +804,6 @@ parse_stmt(Parser& p) {
     return t;
   if (Tree* t = parse_expr(p))
     return t;
- // if (Tree* t = parse_algebra(p))
-   // return t;
   return nullptr;
 }
 

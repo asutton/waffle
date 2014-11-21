@@ -157,6 +157,12 @@ pp_select(std::ostream& os, Select_tree* t) {
 }
 
 void
+pp_join(std::ostream& os, Join_on_tree* t) {
+  os << pretty(t->t1) << " join " << pretty(t->t2) 
+                   << " on "  << pretty(t->t3);
+}
+
+void
 pp_union(std::ostream& os, Union_tree* t) {
   os << pretty(t->t1) << " union " << pretty(t->t2);
 }
@@ -235,6 +241,7 @@ print(std::ostream& os, Tree* t) {
   case comma_tree: return pp_comma(os, as<Comma_tree>(t));
   case dot_tree: return pp_dot(os, as<Dot_tree>(t));
   case select_tree: return pp_select(os, as<Select_tree>(t));
+  case join_on_tree: return pp_join(os, as<Join_on_tree>(t));
   case union_tree: return pp_union(os, as<Union_tree>(t));
   case intersect_tree: return pp_intersect(os, as<Intersect_tree>(t));
   case except_tree: return pp_except(os, as<Except_tree>(t));

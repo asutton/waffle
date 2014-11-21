@@ -858,7 +858,7 @@ elab_mem(Dot_tree* t, Term* t1, Term* t2, Record_type* rec_type) {
 
 // FIXME: Implement me three.
 Expr*
-elab_col(Dot_tree* t, Term* t1, Term* t2, Table_type* table_type) {
+elab_col(Dot_tree* t, Term* t1, Term* t2, List_type* list_type) {
   return new Unit(t->loc, get_unit_type());
 }
 
@@ -885,8 +885,8 @@ elab_dot(Dot_tree* t) {
     return elab_proj(t, t1, t2, tup);
   if (Record_type* rec = as<Record_type>(type))
     return elab_mem(t, t1, t2, rec);
-  if(Table_type* tab = as<Table_type>(type))
-    return elab_col(t, t1, t2, tab);
+  if(List_type* list = as<List_type>(type))
+    return elab_col(t, t1, t2, list);
 
   error(t1->loc) << format("'{}' is not a tuple or record", pretty(t1));
   return nullptr;
@@ -937,6 +937,11 @@ elab_select(Select_tree* t) {
   // Table_type* t_type = new Table_type(get_kind_type(), p_types);
   //return nullptr;
   return new Select_from_where(get_kind_type(), t1, t2, t3);
+}
+
+Expr*
+elab_join(Join_on_tree* t) {
+
 }
 
 // Elaboration for the table term
@@ -1152,6 +1157,7 @@ elab_expr(Tree* t) {
   case dot_tree: return elab_dot(as<Dot_tree>(t));
   case table_tree: return elab_table(as<Table_tree>(t));
   case select_tree: return elab_select(as<Select_tree>(t));
+  case join_on_tree: return elab_join(as<Join_on_tree>(t));
   case and_tree: return elab_and(as<And_tree>(t));
   case or_tree: return elab_or(as<Or_tree>(t));
   case not_tree: return elab_not(as<Not_tree>(t));

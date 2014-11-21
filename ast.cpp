@@ -273,6 +273,12 @@ pp_select(std::ostream& os, Select_from_where* t) {
 }
 
 void
+pp_join(std::ostream& os, Join* t) {
+  os << pretty(t->t1) << " join " << pretty(t->t2) 
+                   << " on "  << pretty(t->t3);
+}
+
+void
 pp_union(std::ostream& os, Union* t) {
   os << pretty(t->t1) << " union " << pretty(t->t2);
 }
