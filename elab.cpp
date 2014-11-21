@@ -1011,13 +1011,59 @@ elab_union(Union_tree* t) {
   return new Union(type1, t1, t2);
 }
 
+
 Expr*
 elab_intersect(Intersect_tree* t) {
   Term* t1 = elab_term(t->t1);
   Term* t2 = elab_term(t->t2);
 
+  //check that t1 and t2 are Type_seq or table
+  if (Type_seq* type1 = get_type(as<Table>(t1)->members())) {
+    if (Type_seq* type2 = get_type(as<Table>(t2)->members())) {
+      //confirm that all the types match
+      auto it_t2 = type2->begin();
+      for(auto it_t1 = type1->begin(); it_t1 != type1->end(); ++it_t1++) {
+        if(!is_same(*it_t1, *it_t2))
+          error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_t1), pretty(*it_t2));
+        ++it_t2;
+      }
+    }
+    else
+      error(t2->loc) << format("mismatched types'", typed(t2));
+  }
+  else
+    error(t1->loc) << format("mismatched types'", typed(t1));
 
-  return nullptr;
+  Type* type1 = get_type(t1);
+  return new Intersect(type1, t1, t2);
+
+}
+
+Expr*
+elab_except(Except_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  //check that t1 and t2 are Type_seq or table
+  if (Type_seq* type1 = get_type(as<Table>(t1)->members())) {
+    if (Type_seq* type2 = get_type(as<Table>(t2)->members())) {
+      //confirm that all the types match
+      auto it_t2 = type2->begin();
+      for(auto it_t1 = type1->begin(); it_t1 != type1->end(); ++it_t1++) {
+        if(!is_same(*it_t1, *it_t2))
+          error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_t1), pretty(*it_t2));
+        ++it_t2;
+      }
+    }
+    else
+      error(t2->loc) << format("mismatched types'", typed(t2));
+  }
+  else
+    error(t1->loc) << format("mismatched types'", typed(t1));
+
+  Type* type1 = get_type(t1);
+  return new Except(type1, t1, t2);
+
 }
 
 
