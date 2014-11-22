@@ -377,13 +377,19 @@ eval_less(Less* t) {
 // Returns nullptr if the label l does not match anything in record r
 Term*
 eval_mem(Mem* t) {
-  //TODO: Test this. Probably shady.
-  // for(auto r : *(t->t1->members())) {
-  //   if( is_same(as<Name>(r->l), as<Init>(r->t)->name()) ) {
-  //     return as<Term>(as<Init>(t)->value());
-  //   }
-  // }
-  // return nullptr;
+  Term* t1 = eval(t->t1);
+
+  Term_seq* r = as<Record>(t1)->members();
+  Ref* ref = as<Ref>(t->member());
+  Name* n = as<Var>(ref->decl())->name();
+
+  for (auto i : *r) {
+    if (is_same(n, as<Init>(i)->name())) {
+      return as<Term>(as<Init>(i)->value());
+    }
+  }
+
+  return nullptr;
 }
 
 Term*

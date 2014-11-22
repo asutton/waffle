@@ -42,6 +42,11 @@ in_global_scope() { return current_scope()->kind == global_scope; }
 bool
 in_lambda_scope() { return current_scope()->kind == lambda_scope; }
 
+// Returns true if the system is currently in member scope.
+bool
+in_member_scope() { return current_scope()->kind == member_scope; }
+
+
 // Associate the term t with the name n in the current scope.
 Expr*
 declare(Name* n, Expr* e) {

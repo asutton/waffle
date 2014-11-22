@@ -852,13 +852,23 @@ elab_proj(Dot_tree* t, Term* t1, Term* t2, Tuple_type* tup_type) {
 
 // FIXME: Implement me too.
 Expr*
-elab_mem(Dot_tree* t, Term* t1, Term* t2, Record_type* rec_type) {
-  return new Unit(t->loc, get_unit_type());
+elab_mem(Dot_tree* t, Term* t1, Tree* t2, Record_type* rec_type) {
+  Scope_guard scope(member_scope);
+  //push the names in the record onto the scope
+  Term_seq* vars = rec_type->members();
+  for (auto v : *vars) {
+    declare(v);
+  }
+  // now we elaborate the second term with 
+  // the scope so it'll recognize the name following the '.'
+  Term* proj = elab_term(t2);
+
+  return new Mem(t->loc, get_unit_type(), t1, proj);
 }
 
 // FIXME: Implement me three.
 Expr*
-elab_col(Dot_tree* t, Term* t1, Term* t2, List_type* list_type) {
+elab_col(Dot_tree* t, Term* t1, Tree* t2, List_type* list_type) {
   return new Unit(t->loc, get_unit_type());
 }
 
@@ -875,18 +885,25 @@ elab_col(Dot_tree* t, Term* t1, Term* t2, List_type* list_type) {
 Expr*
 elab_dot(Dot_tree* t) {
   Term* t1 = elab_term(t->object());
-  Term* t2 = elab_term(t->elem());
 
-  if (not t1 or not t2)
+  if (not t1 /*or not t2*/)
     return nullptr;
 
   Type* type = get_type(t1);
-  if (Tuple_type* tup = as<Tuple_type>(type))
+
+  //elaborate the term following the dot differently for each case
+  if (Tuple_type* tup = as<Tuple_type>(type)) {
+    Term* t2 = elab_term(t->elem());
     return elab_proj(t, t1, t2, tup);
-  if (Record_type* rec = as<Record_type>(type))
+  }
+  if (Record_type* rec = as<Record_type>(type)) {
+    Tree* t2 = t->elem();
     return elab_mem(t, t1, t2, rec);
-  if(List_type* list = as<List_type>(type))
+  }
+  if(List_type* list = as<List_type>(type)) {
+    Tree* t2 = t->elem();
     return elab_col(t, t1, t2, list);
+  }
 
   error(t1->loc) << format("'{}' is not a tuple or record", pretty(t1));
   return nullptr;

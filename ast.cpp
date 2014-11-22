@@ -338,6 +338,7 @@ pp_expr(std::ostream& os, Node* t) {
   case record_term: return pp_record(os, as<Record>(t));
   case comma_term: return pp_comma(os, as<Comma>(t));
   case proj_term: return pp_proj(os, as<Proj>(t));
+  case mem_term: return pp_mem(os, as<Mem>(t));
   case print_term: return pp_print(os, as<Print>(t));
   case prog_term: return pp_prog(os, as<Prog>(t));
   case table_term: return pp_table(os, as<Table>(t));
