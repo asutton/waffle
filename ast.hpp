@@ -575,7 +575,7 @@ struct Select_from_where : Term {
 
   Term* projection_list() const { return t1; }
   Term* table() const { return t2; }
-  Term* conditions() const { return t3; }
+  Term* cond() const { return t3; }
 
   Term* t1;
   Term* t2;

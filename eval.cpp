@@ -378,30 +378,12 @@ eval_proj(Proj* t) {
 
 }
 
-// Returns a term from the record such that the label in the record matches l
-// Returns nullptr if the label l does not match anything in record r
+// Returns a column projection for tables
 Term*
-eval_mem(Mem* t) {
-  Term* t1 = eval(t->t1);
-
-  Term_seq* r = as<Record>(t1)->members();
-  Ref* ref = as<Ref>(t->member());
-  Name* n = as<Var>(ref->decl())->name();
-
-  for (auto i : *r) {
-    if (is_same(n, as<Init>(i)->name())) {
-      return as<Term>(as<Init>(i)->value());
-    }
-  }
-
-  return nullptr;
-}
-
-Term*
-eval_col(Col* t) {
+eval_col(Mem* t) {
   List* table = as<List>(eval(t->t1));
-  Ref* attr = as<Ref>(t->attr());
-  Var* v = as<Var>(attr->decl());
+  Ref* member = as<Ref>(t->member());
+  Var* v = as<Var>(member->decl());
   Name* n = v->name();
 
   Term_seq* records = table->elems();
@@ -424,13 +406,65 @@ eval_col(Col* t) {
   return new List(type, col);
 }
 
+// Returns a term from the record such that the label in the record matches l
+// Returns nullptr if the label l does not match anything in record r
+Term*
+eval_mem(Mem* t) {
+  Term* t1 = eval(t->t1);
+
+  if (Record_type* r_type = as<Record_type>(get_type(t1))) {
+    Term_seq* r = as<Record>(t1)->members();
+    Ref* ref = as<Ref>(t->member());
+    Name* n = as<Var>(ref->decl())->name();
+
+    for (auto i : *r) {
+      if (is_same(n, as<Init>(i)->name())) {
+        return as<Term>(as<Init>(i)->value());
+      }
+    }
+  }
+
+  if (List_type* l_type = as<List_type>(get_type(t1))) {
+    return eval_col(t);
+  }
+
+  return nullptr;
+}
+
 //evaluation for select t1 from t2 where t3
 Term*
 eval_select_from_where(Select_from_where* t) {
-  Term* t1 = eval(t->t1);
-  Term* t2 = eval(t->t2);
-  Term* t3 = eval(t->t3);
-  return new Select_from_where(get_unit_type(), t1, t2, t3);
+  
+  //evaluate the list first
+  List* t2 = as<List>(eval(t->t2));
+  // evaluation for t1 and t3 are special as they don't necessary work
+  // in a trivial manner as other evaluations
+
+  // first we need to produce a set of conditions
+  // t3 is not just 1 condition, it is a condition for every record in the list
+  // for each record in t2, we need to substitute t2 in t3 with that record
+  // this gives us a list of conditions which we can evaluate
+  Term_seq* records = t2->elems();
+  Term_seq* conds = new Term_seq();
+  for(auto r : *records) {
+    //Subst sub { t->table(), t->cond() };
+    //Term* res = subst_term();
+  }
+
+  return nullptr;
+
+
+  // Abs* fn = as<Abs>(eval(t->abs())); // E-app-1
+  // lang_assert(fn, format("ill-formed application target '{}'", pretty(t->abs())));
+
+  // Term* arg = eval(t->arg()); // E-app-2
+    
+  // // Perform a beta reduction and evaluate the result.
+  // Subst sub {fn->var(), arg};
+  // Term* res = subst_term(fn->term(), sub);
+  // return eval(res);
+
+  //return new Select_from_where(get_unit_type(), t1, t2, t3);
 }
 
 Term*
@@ -547,7 +581,7 @@ eval(Term* t) {
   case comma_term: return eval_comma(as<Comma>(t));
   case proj_term: return eval_proj(as<Proj>(t));
   case mem_term: return eval_mem(as<Mem>(t));
-  case col_term: return eval_col(as<Col>(t));
+  //case col_term: return eval_col(as<Col>(t));
   case select_term: return eval_select_from_where(as<Select_from_where>(t));
   case join_on_term: return eval_join(as<Join>(t));
   case union_term: return eval_union(as<Union>(t));

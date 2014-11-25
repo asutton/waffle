@@ -879,7 +879,7 @@ elab_col(Dot_tree* t, Term* t1, Tree* t2, List_type* list_type) {
       declare(v);
     }
     Term* col = elab_term(t2);
-    return new Col(t->loc, get_unit_type(), t1, col);
+    return new Mem(t->loc, get_unit_type(), t1, col);
   }
   else
     return nullptr; // TODO: should try some other form of proj
@@ -923,52 +923,31 @@ elab_dot(Dot_tree* t) {
 }
 
 Term*
-elab_proj_list(Tree* t){}
+elab_where(/*Record* r,*/ Tree* t) {
+  return nullptr;
+}
 
 // Elaboration for the table term
 Expr*
 elab_select(Select_tree* t) {
   
-  Term* t1 = elab_proj_list(t->t1);
+  //elab the table
   Term* t2 = elab_term(t->t2);
+
+  //check for the table type
+  if (List_type* l_type = as<List_type>(get_type(t2))) {
+    if (Record_type* r_type = as<Record_type>(l_type->type())) {
+
+    }
+    else
+      error(t->loc) << format("'{}' is not a list of records", pretty(t2));
+  }
+
+  //elab the projection list
+  Term* t1 = elab_term(t->t1);
+  //elab the condition
   Term* t3 = elab_term(t->t3);
 
-  ///////////////////////
-  //This method doesnt really work because we dont know if t1 is always a list
-  //it might just be one name then this would fail
-  ///////////////////////
-
-  // Term_seq* projection = new Term_seq();
-  // Term* table; //= elab_term(t->t2); 
-  // //Term* check; //= elab_expr(t->t3);
- 
-  // //elaborate the projection definition
-  // for(Tree* s0 : *t->t1) {
-  //   if(Term* attr = as<Var>(elab_term(as<Dot_tree>(s0)))) {
-  //     projection->push_back(attr);
-  //   }
-  // }
-
-  // //check that t2 has table type
-  // if(table = as<Table>(elab_term(as<Table_tree>(t->t2)))) {
-  //     for(auto it_p = projection->begin(); it_p != projection->end(); ++it_p) {
-  //       if(!is_same(*it_p, table))
-  //         error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_p), pretty(table)); 
-  //     }
-  // }
-
-  //   // Check that t3 has type Bool.
-  // Term* t3 = elab_term(t->t3);
-  // Type* bool_type = get_bool_type();
-  // Type* typeBool = get_type(t3);
-  // if (not is_same(typeBool, get_bool_type())) {
-  //   error(t->t3->loc);
-  //   return nullptr;
-  // }
-
-  // Type_seq* p_types = get_type(projection);
-  // Table_type* t_type = new Table_type(get_kind_type(), p_types);
-  //return nullptr;
   return new Select_from_where(get_kind_type(), t1, t2, t3);
 }
 
