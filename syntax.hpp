@@ -86,15 +86,18 @@ struct Abs_tree : Tree {
 };
 
 struct Fn_tree : Tree {
-  Fn_tree(const Token* k, Tree_seq* t1, Tree* t2)
-    : Tree(fn_tree, k->loc), t1(t1), t2(t2) { }
+  Fn_tree(Tree* n, Tree_seq* t2, Tree* t3)
+    : Tree(fn_tree, n->loc), t1(n), t2(t2), t3(t3) { }
 
-  Tree_seq* parms() const { return t1; }
-  Tree* term() const { return t2; }
+  Tree* name() const{ return t1; }   
+  Tree_seq* parms() const { return t2; }
+  Tree* type() const { return t3; }
   
-  Tree_seq* t1;
-  Tree* t2;
+  Tree_seq* t2;
+  Tree* t1;
+  Tree* t3;
 };
+
 
 struct App_tree : Tree {
   App_tree(Tree* t1, Tree* t2)

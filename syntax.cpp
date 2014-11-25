@@ -57,7 +57,7 @@ pp_abs(std::ostream& os, Abs_tree* t) {
 
 void
 pp_fn(std::ostream& os, Fn_tree* t) { 
-  os << '\\' << commas(t->parms()) << '.' << group(pretty(t->term())); 
+  os << pretty(t->name())<<" ("<<commas(t->parms()) << " ) ->" << group(pretty(t->type())); 
 }
 
 void

@@ -1,5 +1,5 @@
 
-def x = \(x:Bool, y:Bool)=>if x then true else false;
+def x (x:Bool, y:Bool)->Bool=if x then true else false;
 print x;
 print typeof x;
 
