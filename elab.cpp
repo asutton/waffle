@@ -850,7 +850,7 @@ elab_proj(Dot_tree* t, Term* t1, Term* t2, Tuple_type* tup_type) {
   return new Unit(t->loc, get_unit_type());
 }
 
-// FIXME: Implement me too.
+// Returns a Mem term whose t1 is a record and whose t2 is a Var
 Expr*
 elab_mem(Dot_tree* t, Term* t1, Tree* t2, Record_type* rec_type) {
   Scope_guard scope(member_scope);
@@ -860,16 +860,29 @@ elab_mem(Dot_tree* t, Term* t1, Tree* t2, Record_type* rec_type) {
     declare(v);
   }
   // now we elaborate the second term with 
-  // the scope so it'll recognize the name following the '.'
+  // the scope so it'll recognize the label following the '.'
   Term* proj = elab_term(t2);
 
   return new Mem(t->loc, get_unit_type(), t1, proj);
 }
 
-// FIXME: Implement me three.
+// Elaboration for a column projection 
+// 'List'.'colname'
 Expr*
 elab_col(Dot_tree* t, Term* t1, Tree* t2, List_type* list_type) {
-  return new Unit(t->loc, get_unit_type());
+  Scope_guard scope(member_scope);
+
+  // check if the list actually has table type
+  if (Record_type* r = as<Record_type>(list_type->type())) {
+    //push the members onto the scope so elab works
+    for (auto v : *r->members()) {
+      declare(v);
+    }
+    Term* col = elab_term(t2);
+    return new Col(t->loc, get_unit_type(), t1, col);
+  }
+  else
+    return nullptr; // TODO: should try some other form of proj
 }
 
 // Elaborate a dotted access expression. Note that the elaboration
@@ -909,11 +922,14 @@ elab_dot(Dot_tree* t) {
   return nullptr;
 }
 
+Term*
+elab_proj_list(Tree* t){}
+
 // Elaboration for the table term
 Expr*
 elab_select(Select_tree* t) {
   
-  Term* t1 = elab_term(t->t1);
+  Term* t1 = elab_proj_list(t->t1);
   Term* t2 = elab_term(t->t2);
   Term* t3 = elab_term(t->t3);
 

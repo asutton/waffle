@@ -61,6 +61,7 @@ constexpr Node_kind join_on_term = make_term_node(62);
 constexpr Node_kind union_term   = make_term_node(63); // t1 union t2
 constexpr Node_kind intersect_term = make_term_node(64); // t1 intersect t2
 constexpr Node_kind except_term  = make_term_node(65); // t1 except t2
+constexpr Node_kind col_term     = make_term_node(66); // table.n (col proj)
 // Miscellaneous terms
 constexpr Node_kind ref_term     = make_term_node(100); // ref to decl
 constexpr Node_kind print_term   = make_term_node(101); // print t
@@ -484,6 +485,20 @@ struct Mem : Term {
 
   Term* record() const { return t1; }
   Term* member() const { return t2; }
+
+  Term* t1;
+  Term* t2;
+};
+
+// A column projection for a table
+struct Col : Term {
+  Col(Type* t, Term* t0, Term* n)
+    : Term(col_term, t), t1(t0), t2(n) { }
+  Col(const Location& l, Type* t, Term* t0, Term* n)
+    : Term(col_term, l, t), t1(t0), t2(n) { }
+
+  Term* table() const { return t1; }
+  Term* attr() const { return t2; }
 
   Term* t1;
   Term* t2;

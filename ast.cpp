@@ -26,6 +26,7 @@ init_nodes() {
   init_node(comma_term, "comma");
   init_node(proj_term, "proj");
   init_node(mem_term, "mem");
+  init_node(col_term, "col");
   init_node(table_term, "table");
   init_node(and_term, "and");
   init_node(or_term, "or");
@@ -185,6 +186,11 @@ pp_proj(std::ostream& os, Proj* t) {
 void
 pp_mem(std::ostream& os, Mem* t) {
   os << pretty(t->record()) << '.' << pretty(t->member());
+}
+
+void
+pp_col(std::ostream& os, Col* t) {
+  os << pretty(t->table()) << '.' << pretty(t->attr());
 }
 
 template<typename T>
@@ -351,6 +357,7 @@ pp_expr(std::ostream& os, Node* t) {
   case union_term: return pp_union(os, as<Union>(t));
   case intersect_term: return pp_intersect(os, as<Intersect>(t));
   case except_term: return pp_except(os, as<Except>(t));
+  case col_term: return pp_col(os, as<Col>(t));
   // Types
   case unit_type: return pp_string(os, "Unit");
   case bool_type: return pp_string(os, "Bool");

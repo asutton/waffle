@@ -373,6 +373,11 @@ eval_less(Less* t) {
 //
 ///////////////////////////////////
 
+Term*
+eval_proj(Proj* t) {
+
+}
+
 // Returns a term from the record such that the label in the record matches l
 // Returns nullptr if the label l does not match anything in record r
 Term*
@@ -393,18 +398,39 @@ eval_mem(Mem* t) {
 }
 
 Term*
-eval_proj(Proj* t) {
+eval_col(Col* t) {
+  List* table = as<List>(eval(t->t1));
+  Ref* attr = as<Ref>(t->attr());
+  Var* v = as<Var>(attr->decl());
+  Name* n = v->name();
 
+  Term_seq* records = table->elems();
+  Term_seq* vars = new Term_seq();
+  vars->push_back(v);
+  Type* rec_type = new Record_type(get_kind_type(), vars);
+
+  // resulting column
+  Term_seq* col = new Term_seq();
+  for (auto r : *records) {
+    for (auto i : *as<Record>(r)->members()) {
+      if (is_same(n, as<Init>(i)->name())) {
+        Term_seq* e = new Term_seq();
+        e->push_back(i);
+        col->push_back(new Record(rec_type, e));
+      }
+    }
+  }
+  Type* type = new List_type(get_kind_type(), rec_type);
+  return new List(type, col);
 }
 
 //evaluation for select t1 from t2 where t3
 Term*
 eval_select_from_where(Select_from_where* t) {
-  //perform selection
-  //perform projection
-    //first we need to eval all the terms in t1 (the comma list)
-  //populate new table
-  //return new table
+  Term* t1 = eval(t->t1);
+  Term* t2 = eval(t->t2);
+  Term* t3 = eval(t->t3);
+  return new Select_from_where(get_unit_type(), t1, t2, t3);
 }
 
 Term*
@@ -521,6 +547,7 @@ eval(Term* t) {
   case comma_term: return eval_comma(as<Comma>(t));
   case proj_term: return eval_proj(as<Proj>(t));
   case mem_term: return eval_mem(as<Mem>(t));
+  case col_term: return eval_col(as<Col>(t));
   case select_term: return eval_select_from_where(as<Select_from_where>(t));
   case join_on_term: return eval_join(as<Join>(t));
   case union_term: return eval_union(as<Union>(t));
