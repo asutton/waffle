@@ -191,6 +191,35 @@ parse_parm_clause(Parser& p) {
   return nullptr;
 }
 
+// Parse a lambda abstraction.
+//
+//    lambda-expr ::= '\' parm-decl ':' type '=>' term
+//                  | '\' parm-list '=>' term
+
+Tree*
+parse_lambda_expr(Parser& p) {
+  if (const Token* k = parse::accept(p, backslash_tok)) {
+    if(Tree* v = parse_parm_decl(p)) {
+      if (parse::expect(p, map_tok)) {
+        if (Tree* t = parse_expr(p))
+          return new Abs_tree(k, v, t);
+        else
+          parse::parse_error(p) << "expected 'expr' after '.'";
+      }
+    } else if (Tree_seq* ps = parse_parm_clause(p)) {
+      if (parse::expect(p, map_tok)) {
+        if (Tree* t = parse_expr(p))
+          return new Fn_tree(k, ps, t);
+        else
+          parse::parse_error(p) << "expected 'expr' after '.'";
+      }
+    } else {
+      parse::parse_error(p) << "expected 'var-decl' or 'parm-clause' after '\\'";
+    }
+  }
+  return nullptr;
+}
+
 // Parse an element of a tuple or a variant.
 //
 //    elem ::= var | init | expr
@@ -333,6 +362,8 @@ parse_grouped_expr(Parser& p) {
 Tree*
 parse_primary_expr(Parser& p) {
   if (Tree* t = parse_literal_expr(p))
+    return t;
+  if (Tree* t = parse_lambda_expr(p))
     return t;
   if (Tree* t = parse_id_expr(p))
     return t;
@@ -526,15 +557,16 @@ Tree*
 parse_expr(Parser& p) {
   return parse_arrow_expr(p);
 }
+
+// Parse an intializer clause
+//    initializer-clause:= '=' expr
 Tree*
 parse_required_initializer_clause(Parser& p) {
   if (parse::accept(p, equal_tok))
-     if (Tree* t = parse_expr(p))
-        return t;
-	else
- parse::parse_error(p) << "expected 'expr' after '='";
-   
-
+   if (Tree* t = parse_expr(p))
+      return t;
+   else
+      parse::parse_error(p) << "expected 'expr' after '='";
   return nullptr;
 }
 
@@ -548,50 +580,45 @@ parse_return_type(Parser& p) {
       if (parse::expect(p, arrow_tok))
        if (Tree* t = parse_type_lit(p))
           return t;
-    return nullptr;
+      return nullptr;
     
 }
+
 // Parse a function declarator.
 // fn-decl ::= n(p1, p2, ...) -> t
 Tree*
 parse_fn_decl(Parser& p, Tree* n) {
   if (Tree_seq* ps = parse_parm_clause(p))    
-//parsing parameter list as Lambda abstraction \(pi:Ti).e
-    if (Tree* t = parse_return_type(p))
-      return new Fn_tree(n, ps, t);//new fn_tree
+  //parsing parameter list as Lambda abstraction \(pi:Ti).e
+  if (Tree* t = parse_return_type(p))
+     return new Func_tree(n, ps, t);
   return nullptr;
 }
+
 // Parse a definition expression.
 //
 //    def_const-expr ::=  name '=' expr
-
-
 Tree*
 parse_const_decl(Parser& p,Tree *n,const Token *k) {
-  
-      if (parse::accept(p, equal_tok)) {
-        if (Tree* e = parse_expr(p))
-          return new Def_tree(k, n, e);
-        else
-          parse::parse_error(p) << "expected 'expr' after '='";
-      }
-    
-  
+  if (parse::accept(p, equal_tok)) {
+   if (Tree* e = parse_expr(p))
+      return new Def_tree(k, n, e);
+   else
+      parse::parse_error(p) << "expected 'expr' after '='";
+  }
   return nullptr;
 }
+
 // Parse a def-decl.
 //
 //    def-decl ::= const-decl | fn-decl
 //
-
 Tree*
 parse_def_decl(Parser& p) {
   if (const Token* k = parse::accept(p, def_tok)) 
     if (Tree* n = parse_name(p)) {
-
-       // Parse the declarator.
+      // Parse the declarator.
       Tree*d1=nullptr;
-
       if (Tree* d2 = parse_const_decl(p, n,k))
 	d1=d2;
       else if (Tree* d2 = parse_fn_decl(p, n))
@@ -600,13 +627,14 @@ parse_def_decl(Parser& p) {
         parse::parse_error(p) << "expected 'parameter-clause' after 'name'";
         return nullptr;
       }
-
-       // Parse the initializer.
+      // Parse the initializer.
       if (Tree* e = parse_required_initializer_clause(p))
         return new Def_tree(k, d1, e);
-     else return d1;
+      else 
+        return d1;
   }
- else return nullptr;
+  else 
+   return nullptr;
 }
 
 

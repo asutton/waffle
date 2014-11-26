@@ -15,6 +15,7 @@ constexpr Node_kind var_tree     = make_tree_node(110); // x:T
 constexpr Node_kind abs_tree     = make_tree_node(111); // \v.t
 constexpr Node_kind fn_tree      = make_tree_node(112); // \(v*).t
 constexpr Node_kind app_tree     = make_tree_node(113); // t1 t2
+constexpr Node_kind func_tree    = make_tree_node(114); // n(v*)->T
 constexpr Node_kind if_tree      = make_tree_node(120); // if t1 ...
 constexpr Node_kind succ_tree    = make_tree_node(130); // succ t
 constexpr Node_kind pred_tree    = make_tree_node(131); // pred t
@@ -86,8 +87,18 @@ struct Abs_tree : Tree {
 };
 
 struct Fn_tree : Tree {
-  Fn_tree(Tree* n, Tree_seq* t2, Tree* t3)
-    : Tree(fn_tree, n->loc), t1(n), t2(t2), t3(t3) { }
+  Fn_tree(const Token* k, Tree_seq* t1, Tree* t2)
+    : Tree(fn_tree, k->loc), t1(t1), t2(t2) { }
+
+  Tree_seq* parms() const { return t1; }
+  Tree* term() const { return t2; }
+  Tree_seq* t1;
+  Tree* t2;
+};
+
+struct Func_tree : Tree {
+  Func_tree(Tree* n, Tree_seq* t2, Tree* t3)
+    : Tree(func_tree, n->loc), t1(n), t2(t2), t3(t3) { }
 
   Tree* name() const{ return t1; }   
   Tree_seq* parms() const { return t2; }

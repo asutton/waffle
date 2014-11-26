@@ -57,6 +57,11 @@ pp_abs(std::ostream& os, Abs_tree* t) {
 
 void
 pp_fn(std::ostream& os, Fn_tree* t) { 
+  os << '\\' <<  commas(t->parms()) << "=>" << group(pretty(t->term())); 
+}
+
+void
+pp_func(std::ostream& os, Func_tree* t) { 
   os << pretty(t->name())<<" ("<<commas(t->parms()) << " ) ->" << group(pretty(t->type())); 
 }
 
@@ -155,6 +160,7 @@ print(std::ostream& os, Tree* t) {
   case init_tree: return pp_init(os, as<Init_tree>(t));
   case abs_tree: return pp_abs(os, as<Abs_tree>(t));
   case fn_tree: return pp_fn(os, as<Fn_tree>(t));
+  case func_tree: return pp_func(os, as<Func_tree>(t));
   case app_tree: return pp_app(os, as<App_tree>(t));
   case if_tree:  return pp_if(os, as<If_tree>(t));
   case succ_tree: return pp_succ(os, as<Succ_tree>(t));
