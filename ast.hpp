@@ -504,7 +504,7 @@ struct Col : Term {
   Term* t2;
 };
 
-// Represents a reference to a declared entity in the program 
+// Represefnts a reference to a declared entity in the program 
 // (e.g., a variable, function, etc). Note that the type of the
 // reference is the same as that of its referred-to expression.
 struct Ref : Term {
@@ -588,9 +588,9 @@ struct Select_from_where : Term {
 // t3 must evaluate to bool
 struct Join : Term {
   Join(Type* t, Term* t1, Term* t2, Term* t3)
-    : Term(select_term, t), t1(t1), t2(t2), t3(t3) { }
+    : Term(join_on_term, t), t1(t1), t2(t2), t3(t3) { }
   Join(const Location& l, Type* t, Term* t1, Term* t2, Term* t3)
-    : Term(select_term, l, t), t1(t1), t2(t2), t3(t3){ }
+    : Term(join_on_term, l, t), t1(t1), t2(t2), t3(t3){ }
 
   Term* table_a() const { return t1; }
   Term* table_b() const { return t2; }

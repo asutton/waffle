@@ -363,17 +363,17 @@ parse_grouped_expr(Parser& p) {
 Tree*
 parse_select_expr(Parser& p) {
     if(const Token* s = parse::accept(p, select_tok)) {
-        if (Tree* t1 = parse_expr(p)) {
-          if(parse::expect(p, from_tok)) {
-            if (Tree* t2 = parse_expr(p)) {
-              if(parse::expect(p, where_tok)) {
-                if (Tree* t3 = parse_expr(p)) { 
-                  return new Select_tree(s,t1,t2,t3);
-                }
+      if (Tree* t1 = parse_expr(p)) {
+        if(parse::expect(p, from_tok)) {
+          if (Tree* t2 = parse_expr(p)) {
+            if(parse::expect(p, where_tok)) {
+              if (Tree* t3 = parse_expr(p)) { 
+                return new Select_tree(s,t1,t2,t3);
               }
             }
           }
         }
+      }
     }
     return nullptr;
 }

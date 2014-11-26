@@ -412,6 +412,7 @@ Term*
 eval_mem(Mem* t) {
   Term* t1 = eval(t->t1);
 
+  // If its a record type get the term with the corresponding label
   if (Record_type* r_type = as<Record_type>(get_type(t1))) {
     Term_seq* r = as<Record>(t1)->members();
     Ref* ref = as<Ref>(t->member());
@@ -424,6 +425,7 @@ eval_mem(Mem* t) {
     }
   }
 
+  // Else return the column
   if (List_type* l_type = as<List_type>(get_type(t1))) {
     return eval_col(t);
   }
@@ -431,40 +433,78 @@ eval_mem(Mem* t) {
   return nullptr;
 }
 
+Term*
+eval_sql_project(List* table, List_type* l_type) {
+  
+}
+
 //evaluation for select t1 from t2 where t3
 Term*
 eval_select_from_where(Select_from_where* t) {
-  
   //evaluate the list first
   List* t2 = as<List>(eval(t->t2));
-  // evaluation for t1 and t3 are special as they don't necessary work
-  // in a trivial manner as other evaluations
+
+  // construct the type for the new table based on the projection list
+  Record_type* r_type;
+  //new term seq to hold var list for record type
+  Term_seq* var_list = new Term_seq();
+
+  //if its more than one projection operator
+  if (Comma* c = as<Comma>(t->t1)) {
+    for (auto p : *c->elems()) {
+      Mem* m = as<Mem>(p);
+      // we don't really care what the record value of Mem is
+      // we really only care about the name for now
+      // TODO: fix later for multiple table projection
+      Ref* member = as<Ref>(eval(m->member()));
+      Var* v = as<Var>(member->decl());
+      var_list->push_back(v);
+    }
+  }
+
+  //in case its just one projection
+  if (Mem* m = as<Mem>(t->t1)) {
+    Ref* member = as<Ref>(eval(m->member()));
+    Var* v = as<Var>(member->decl());
+    var_list->push_back(v);
+  }
+ 
+  // create the record type
+  r_type = new Record_type(get_kind_type(), var_list);
+  // create the new list type from the record type
+  List_type* l_type = new List_type(get_kind_type(), r_type);
 
   // first we need to produce a set of conditions
   // t3 is not just 1 condition, it is a condition for every record in the list
-  // for each record in t2, we need to substitute t2 in t3 with that record
+  // for each record in t2, we need to substitute the ref t2 in t3 with that record
   // this gives us a list of conditions which we can evaluate
   Term_seq* records = t2->elems();
   Term_seq* conds = new Term_seq();
-  for(auto r : *records) {
-    //Subst sub { t->table(), t->cond() };
-    //Term* res = subst_term();
+
+  // t2 should be a Def or a Ref
+  // we cannot have a table with no name here
+  Term* subst;
+  if (Ref* ref = as<Ref>(t->t2)) {
+    subst = eval(as<Def>(ref->decl()));
+    // std::cout << "REF: " << pretty(ref) <<'\n';
+    // std::cout << "DEF: " << pretty(ref->decl()) << '\n';
+  }
+  if (Def* def = as<Def>(t->t2)) {
+    subst = eval(def);
+    // std::cout << "DEF: " << pretty(def) << '\n';
   }
 
+  for(auto r : *records) {
+    // std::cout << "COND: " << pretty(t->t3) << '\n';
+    Subst sub { subst, r };
+    Term* res = subst_term(t->cond(), sub);
+    // std::cout << "GOT: " << pretty(res) << "\n";
+    conds->push_back(res);
+  }
+
+  auto cond_it = conds->begin();
+
   return nullptr;
-
-
-  // Abs* fn = as<Abs>(eval(t->abs())); // E-app-1
-  // lang_assert(fn, format("ill-formed application target '{}'", pretty(t->abs())));
-
-  // Term* arg = eval(t->arg()); // E-app-2
-    
-  // // Perform a beta reduction and evaluate the result.
-  // Subst sub {fn->var(), arg};
-  // Term* res = subst_term(fn->term(), sub);
-  // return eval(res);
-
-  //return new Select_from_where(get_unit_type(), t1, t2, t3);
 }
 
 Term*
