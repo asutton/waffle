@@ -358,6 +358,7 @@ pp_expr(std::ostream& os, Node* t) {
   case intersect_term: return pp_intersect(os, as<Intersect>(t));
   case except_term: return pp_except(os, as<Except>(t));
   case col_term: return pp_col(os, as<Col>(t));
+  case join_on_term: return pp_join(os, as<Join>(t));
   // Types
   case unit_type: return pp_string(os, "Unit");
   case bool_type: return pp_string(os, "Bool");

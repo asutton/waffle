@@ -953,7 +953,28 @@ elab_select(Select_tree* t) {
 
 Expr*
 elab_join(Join_on_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+  Term* t3 = elab_term(t->t3);
 
+  Type* type_t1 = get_type(t1);
+  Type* type_t2 = get_type(t2);
+
+  //check that t1 and t2 are the same type
+  if(!is_same(type_t1, type_t2))
+    error(t->loc) << format("mismatched types '{0}' and '{1}'", 
+                            pretty(type_t1), 
+                            pretty(type_t2));
+
+  //check that t3 is bool type
+  Type* type_t3 = get_type(t3);
+  if (not is_same(type_t3, get_bool_type())) {
+    error(t3->loc) << format("mismatched types '{0}'", 
+                            pretty(type_t3));
+    return nullptr;
+  }
+
+  return new Join(type_t1, t1, t2, t3);
 }
 
 // Elaboration for the table term
