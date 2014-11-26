@@ -433,9 +433,56 @@ eval_mem(Mem* t) {
   return nullptr;
 }
 
-Term*
-eval_sql_project(List* table, List_type* l_type) {
+// Merges records a and b
+Record*
+merge_records(Record* a, Record* b) {
+  Term_seq* a_mem = a->members();
+  Term_seq* b_mem = b->members();
+  Term_seq* elems = new Term_seq();
+
+  elems->insert(elems->end(), a_mem->begin(), a_mem->end());
+  elems->insert(elems->end(), b_mem->begin(), b_mem->end());
   
+  Record_type* ar_type = as<Record_type>(get_type(a));
+  Record_type* br_type = as<Record_type>(get_type(b));
+
+  Term_seq* vars = new Term_seq();
+  vars->insert(vars->end(), ar_type->members()->begin(), ar_type->members()->end());
+  vars->insert(vars->end(), br_type->members()->begin(), br_type->members()->end());
+
+  Record_type* type = new Record_type(get_kind_type(), vars);
+  return new Record(type, elems);
+}
+
+// Appends table b to the rhs of table a
+// a and b must be a list of Records to work
+// else bad things happen
+List*
+merge_tables(List* a, List* b) {
+  // assume the record type because these are supposed to be tables
+  List_type* al_type = as<List_type>(get_type(a));
+  List_type* bl_type = as<List_type>(get_type(b));
+  Record_type* ar_type = as<Record_type>(al_type->type());
+  Record_type* br_type = as<Record_type>(bl_type->type());
+
+  Term_seq* vars = new Term_seq();
+  vars->insert(vars->end(), ar_type->members()->begin(), ar_type->members()->end());
+  vars->insert(vars->end(), br_type->members()->begin(), br_type->members()->end());
+  Record_type* nr_type = new Record_type(get_kind_type(), vars);
+
+  //merge the individual records in the table
+  Term_seq* rec = new Term_seq();
+  auto it_a = a->elems()->begin();
+  auto it_b = b->elems()->begin();
+  while (it_a != a->elems()->end()) {
+    rec->push_back(merge_records(as<Record>(*it_a), as<Record>(*it_b)));
+    ++it_a;
+    ++it_b;
+  }
+
+  List_type* l_type = new List_type(get_kind_type(), nr_type);
+  List* res = new List(l_type, rec);
+  return res;
 }
 
 //evaluation for select t1 from t2 where t3
@@ -444,35 +491,39 @@ eval_select_from_where(Select_from_where* t) {
   //evaluate the list first
   List* t2 = as<List>(eval(t->t2));
 
-  // construct the type for the new table based on the projection list
-  Record_type* r_type;
   //new term seq to hold var list for record type
-  Term_seq* var_list = new Term_seq();
-
+  Term_seq* cols = new Term_seq();
   //if its more than one projection operator
   if (Comma* c = as<Comma>(t->t1)) {
     for (auto p : *c->elems()) {
       Mem* m = as<Mem>(p);
-      // we don't really care what the record value of Mem is
-      // we really only care about the name for now
-      // TODO: fix later for multiple table projection
-      Ref* member = as<Ref>(eval(m->member()));
-      Var* v = as<Var>(member->decl());
-      var_list->push_back(v);
+      List* col = as<List>(eval(m));
+      cols->push_back(col);
     }
   }
 
   //in case its just one projection
   if (Mem* m = as<Mem>(t->t1)) {
-    Ref* member = as<Ref>(eval(m->member()));
-    Var* v = as<Var>(member->decl());
-    var_list->push_back(v);
+    cols->push_back(eval(m));
   }
- 
-  // create the record type
-  r_type = new Record_type(get_kind_type(), var_list);
-  // create the new list type from the record type
-  List_type* l_type = new List_type(get_kind_type(), r_type);
+
+  //construct the new table after projection
+  List* n_table = as<List>(*cols->begin());
+  if(cols->size() > 1) {
+    auto it1 = cols->begin() + 1;
+    while (it1 != cols->end()) {
+      n_table = merge_tables(n_table, as<List>(*it1));
+      ++it1;
+    }
+  }
+
+  // t2 should be a Def or a Ref
+  // we cannot have a table with no name here
+  Term* subst;
+  if (Ref* ref = as<Ref>(t->t2))
+    subst = eval(as<Def>(ref->decl()));
+  if (Def* def = as<Def>(t->t2))
+    subst = eval(def);
 
   // first we need to produce a set of conditions
   // t3 is not just 1 condition, it is a condition for every record in the list
@@ -480,31 +531,32 @@ eval_select_from_where(Select_from_where* t) {
   // this gives us a list of conditions which we can evaluate
   Term_seq* records = t2->elems();
   Term_seq* conds = new Term_seq();
-
-  // t2 should be a Def or a Ref
-  // we cannot have a table with no name here
-  Term* subst;
-  if (Ref* ref = as<Ref>(t->t2)) {
-    subst = eval(as<Def>(ref->decl()));
-    // std::cout << "REF: " << pretty(ref) <<'\n';
-    // std::cout << "DEF: " << pretty(ref->decl()) << '\n';
-  }
-  if (Def* def = as<Def>(t->t2)) {
-    subst = eval(def);
-    // std::cout << "DEF: " << pretty(def) << '\n';
-  }
-
   for(auto r : *records) {
-    // std::cout << "COND: " << pretty(t->t3) << '\n';
     Subst sub { subst, r };
     Term* res = subst_term(t->cond(), sub);
-    // std::cout << "GOT: " << pretty(res) << "\n";
     conds->push_back(res);
   }
 
+  // iterate through the table's records and the conditions
+  // if the condition evaluates to true then add the record to result
   auto cond_it = conds->begin();
+  auto table_it = n_table->elems()->begin();
+  if(conds->size() == n_table->elems()->size()) {
+    Term_seq* sel_rec = new Term_seq();
+    // true
+    Term* _true = get_true();
+    while(cond_it != conds->end()) {
+      //check if the evaluation of the condition is true
+      if(is_same(_true, eval(*cond_it))) {
+        sel_rec->push_back(*table_it);
+      }
+      ++cond_it;
+      ++table_it;
+    }
+    n_table->t1 = sel_rec;
+  }
 
-  return nullptr;
+  return eval(n_table);
 }
 
 Term*
