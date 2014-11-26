@@ -3,7 +3,7 @@ project(waffle CXX)
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_CXX_FLAGS "-std=c++11")
-
+set(CMAKE_BUILD_TYPE Debug)
 # For my mac...
 link_directories(/opt/local/lib)
 
