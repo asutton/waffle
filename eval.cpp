@@ -346,9 +346,6 @@ eval_less(Less* t) {
   Term* t1 = eval(t->t1);
   Term* t2 = eval(t->t2);
 
-  std::cout << pretty(t1);
-  std::cout << pretty(t2);
-
   if(is_less(t1, t2))
     return get_true();
   else
