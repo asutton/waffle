@@ -700,31 +700,6 @@ parse_schema_expr(Parser& p) {
   return nullptr;
 }
 
-// Parse a table expression
-//
-//    table-expr ::= table [x1:T1...xn:Tn]{{x1 = v1...xn = vn}...}
-Tree*
-parse_table_expr(Parser& p) {
-  if (const Token* k = parse::accept(p, table_tok)) {
-    if(Tree_seq* schema = parse_schema_expr(p)) {
-      if(parse::accept(p, lbrace_tok)) {
-        if(Tree_seq* records = parse_elem_list(p, rbrace_tok)) {
-          if(parse::accept(p, rbrace_tok))
-            return new Table_tree(k, schema, records);
-          else
-            parse::parse_error(p) << "Expected '}' at end of 'table'";
-        }
-      }
-      else
-        parse::parse_error(p) << "Expected '{' after schema expr.";
-    }
-    else
-      parse::parse_error(p) << "Expected 'schema' after 'table'";
-  }
-
-  return nullptr;
-}
-
 // Parse a prefix expr.
 //
 //    prefix-expr ::= if-expr | succ-epxr | pred-expr | iszero-expr
@@ -744,8 +719,6 @@ parse_prefix_expr(Parser& p) {
   if (Tree* t = parse_print_expr(p))
     return t;
   if (Tree* t = parse_typeof_expr(p))
-    return t;
-  if (Tree* t = parse_table_expr(p))
     return t;
   if (Tree* t = parse_not_expr(p))
     return t;

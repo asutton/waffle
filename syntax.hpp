@@ -25,7 +25,6 @@ constexpr Node_kind list_tree    = make_tree_node(151); // [t1, ..., tn]
 constexpr Node_kind variant_tree = make_tree_node(152); // <t1, ..., tn>
 constexpr Node_kind comma_tree   = make_tree_node(153); // t1, ..., tn
 constexpr Node_kind dot_tree     = make_tree_node(154); // t1.t2
-constexpr Node_kind table_tree   = make_tree_node(160); // [t1:T1,...,tn:Tn]{{t1=v1:T1,...,tn=vn:Tn}...}
 constexpr Node_kind select_tree  = make_tree_node(161); // select t1 from t2 where t3
 constexpr Node_kind join_on_tree = make_tree_node(162); // t1 join t2 on t3
 constexpr Node_kind union_tree   = make_tree_node(163); // t1 union t2
@@ -220,20 +219,6 @@ struct List_tree : Tree {
   Tree_seq* elems() const { return t1; }
 
   Tree_seq* t1;
-};
-
-// A table of the form [t1:T1,...,tn:Tn]{{t1=v1:T1,...,tn=vn:Tn}...}
-// where [t1:T1,...,tn:Tn] define the schema of the table
-// and {{t1=v1:T1,...,tn=vn:Tn}...} defines the records in the table
-struct Table_tree : Tree {
-  Table_tree(const Token* k, Tree_seq* schema, Tree_seq* records)
-    : Tree(table_tree, k->loc), s(schema), r(records) { }
-
-  Tree_seq* schema() const { return s; }
-  Tree_seq* records() const { return r; }
-
-  Tree_seq* s;
-  Tree_seq* r;
 };
 
 // A sql statement of form select t1 from t2 where t3 

@@ -324,14 +324,9 @@ eval_not(Not* t) {
 
 // Evaluation for t1 == t2
 // 
-// t1 ->* t1' t2 ->* t2*  is_same(t1',t2') -> true
-// -----------------------------------------------
-// t1 == t2 ->* true
-//
-// t1 ->* t1' t2 ->* t2'  is_same(t1,t2) -> false
-// -----------------------------------------------
-// t1 == t2 ->* false
-//
+// Online works for types defined by is_equals
+// Does not actually require the same type on both
+// operands since different typed terms fail the first cond anyway
 Term*
 eval_equals(Equals* t) {
   Term* t1 = eval(t->t1);
@@ -344,14 +339,7 @@ eval_equals(Equals* t) {
 }
 
 // Evaluation for the term 't1 < t2'
-// 
-// t1 ->* t1' t2 ->* t2*  is_less(t1', t2') -> true
-// ------------------------------------------------
-// t1 < t2 ->* true
-//
-// t1 ->* t1' t2 ->* t2'  is_less(t1',t2') -> false
-// ------------------------------------------------
-// t1 < t2 ->* false
+// Only works on types defined by is_less
 //
 Term*
 eval_less(Less* t) {
@@ -375,7 +363,7 @@ eval_less(Less* t) {
 
 Term*
 eval_proj(Proj* t) {
-
+  return nullptr;
 }
 
 // Returns a column projection for tables
@@ -566,6 +554,7 @@ eval_join(Join* t) {
   //perform projection on table
   //populate new table
   //ereturn new table
+  return nullptr;
 }
 
 Term*

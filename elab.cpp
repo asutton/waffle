@@ -899,7 +899,7 @@ Expr*
 elab_dot(Dot_tree* t) {
   Term* t1 = elab_term(t->object());
 
-  if (not t1 /*or not t2*/)
+  if (not t1)
     return nullptr;
 
   Type* type = get_type(t1);
@@ -918,19 +918,13 @@ elab_dot(Dot_tree* t) {
     return elab_col(t, t1, t2, list);
   }
 
-  error(t1->loc) << format("'{}' is not a tuple or record", pretty(t1));
-  return nullptr;
-}
-
-Term*
-elab_where(/*Record* r,*/ Tree* t) {
+  error(t1->loc) << format("'{}' is not a tuple, record, or list", pretty(t1));
   return nullptr;
 }
 
 // Elaboration for the table term
 Expr*
-elab_select(Select_tree* t) {
-  
+elab_select(Select_tree* t) { 
   //elab the table
   Term* t2 = elab_term(t->t2);
 
@@ -977,56 +971,6 @@ elab_join(Join_on_tree* t) {
   return new Join(type_t1, t1, t2, t3);
 }
 
-// Elaboration for the table term
-Expr*
-elab_table(Table_tree* t) {
-  Term_seq* schema = new Term_seq();
-  Term_seq* records = new Term_seq();
-
-  //elaborate the schema definition
-  for(Tree* s0 : *t->schema()) {
-    if(Term* attr = as<Var>(elab_term(s0)))
-      schema->push_back(attr);
-  }
-  //get the types of the schema attributes
-  Type_seq* s_types = get_type(schema);
-
-  //elaborate the records in the table
-  for(Tree* r0 : *t->records()) {
-    if(Record* record = as<Record>(elab_term(r0))) {
-      //confirm that the record has the same name and value type as the schema
-      //also confirm that the ordering of labels is the same
-      Type_seq* r_types = get_type(record->members());
-      //confirm that all the types match
-      auto it_s = s_types->begin();
-      for(auto it_r = r_types->begin(); it_r != r_types->end(); ++it_r) {
-        if(!is_same(*it_r, *it_s))
-          error(t->loc) << format("mismatched types '{0}' and '{1}'", pretty(*it_r), pretty(*it_s)); 
-        ++it_s; 
-      }
-
-      //confirm that all the names match
-      auto schema_it = schema->begin();
-      for(auto it = record->members()->begin(); it != record->members()->end(); ++it) {
-        if( !is_same(as<Init>(*it)->name(), as<Var>(*schema_it)->name()) )
-          error(t->loc) << format("mismatched names '{0}' and '{1}'", 
-                                  pretty(as<Init>(*it)->name()), 
-                                  pretty(as<Var>(*schema_it)->name()));
-
-        ++schema_it;
-      }
-
-      records->push_back(record);
-    }
-  }
-
-  //construct the type for the table
-  //it has a type efined by its schema types
-  Table_type* t_type = new Table_type(get_kind_type(), s_types);
-
-  return new Table(t->loc, t_type, schema, records);
-}
-
 Expr*
 elab_union(Union_tree* t) {
   Term* t1 = elab_term(t->t1);
@@ -1043,7 +987,6 @@ elab_union(Union_tree* t) {
   Type* type1 = get_type(t1);
   return new Union(type1, t1, t2);
 }
-
 
 Expr*
 elab_intersect(Intersect_tree* t) {
@@ -1078,7 +1021,6 @@ elab_except(Except_tree* t) {
   Type* type1 = get_type(t1);
   return new Except(type1, t1, t2);
 }
-
 
 Expr*
 elab_and(And_tree* t) {
@@ -1214,7 +1156,6 @@ elab_expr(Tree* t) {
   case typeof_tree: return elab_typeof(as<Typeof_tree>(t));
   case comma_tree: return elab_comma(as<Comma_tree>(t));
   case dot_tree: return elab_dot(as<Dot_tree>(t));
-  case table_tree: return elab_table(as<Table_tree>(t));
   case select_tree: return elab_select(as<Select_tree>(t));
   case join_on_tree: return elab_join(as<Join_on_tree>(t));
   case and_tree: return elab_and(as<And_tree>(t));

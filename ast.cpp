@@ -168,12 +168,6 @@ pp_record(std::ostream& os, Record* t) {
 }
 
 void
-pp_table(std::ostream& os, Table* t) {
-  os << '[' << commas(t->schema()) << "]\n";
-  os << '{' << commas(t->members()) << "}\n";
-}
-
-void
 pp_comma(std::ostream& os, Comma* t) {
   os << '(' << commas(t->elems()) << ')';
 }
@@ -347,7 +341,6 @@ pp_expr(std::ostream& os, Node* t) {
   case mem_term: return pp_mem(os, as<Mem>(t));
   case print_term: return pp_print(os, as<Print>(t));
   case prog_term: return pp_prog(os, as<Prog>(t));
-  case table_term: return pp_table(os, as<Table>(t));
   case and_term: return pp_and(os, as<And>(t));
   case or_term: return pp_or(os, as<Or>(t));
   case not_term: return pp_not(os, as<Not>(t));

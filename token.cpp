@@ -39,5 +39,4 @@ init_tokens() {
   init_token(union_tok, "union");
   init_token(intersect_tok, "intersect");
   init_token(except_tok, "except");
-  init_token(table_tok, "table");
 }

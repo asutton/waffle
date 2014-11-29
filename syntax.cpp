@@ -27,7 +27,6 @@ init_trees() {
   init_node(variant_tree, "variant-tree");
   init_node(comma_tree, "comma-tree");
   init_node(dot_tree, "dot-tree");
-  init_node(table_tree, "table-tree");
   init_node(select_tree, "select-tree");
   init_node(join_on_tree, "join-on-tree");
   init_node(union_tree, "union-tree");
@@ -126,12 +125,6 @@ pp_tuple(std::ostream& os, Tuple_tree* t) {
 void
 pp_list(std::ostream& os, List_tree* t) {
   os << '[' << commas(t->elems()) << ']';
-}
-
-void
-pp_table(std::ostream& os, Table_tree* t) {
-  os << '[' << commas(t->schema()) << "]\n";
-  os << '{' << commas(t->records()) << "}\n";
 }
 
 void
@@ -236,7 +229,6 @@ print(std::ostream& os, Tree* t) {
   case typeof_tree: return pp_typeof(os, as<Typeof_tree>(t));
   case tuple_tree: return pp_tuple(os, as<Tuple_tree>(t));
   case list_tree: return pp_list(os, as<List_tree>(t));
-  case table_tree : return pp_table(os, as<Table_tree>(t));
   case variant_tree: return pp_variant(os, as<Variant_tree>(t));
   case comma_tree: return pp_comma(os, as<Comma_tree>(t));
   case dot_tree: return pp_dot(os, as<Dot_tree>(t));
