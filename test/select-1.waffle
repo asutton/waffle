@@ -1,0 +1,5 @@
+def x =
+[{x1 = true, x2 = 1, x3 = 2},
+{x1 = false, x2 = 3, x3 = 4}];
+
+select (x.x1, x.x3) from x where x.x2 eq 1;

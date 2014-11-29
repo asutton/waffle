@@ -89,7 +89,7 @@ elab_term(Tree* t) {
 // -------------------------------------------------------------------------- //
 // Elaboration rules
 
-// Elaborate an id by looking it up in the current context.
+// Elaborate an id by looking it up in the current cntext.
 //
 //    n : T in G
 //    ---------- T-id
@@ -850,10 +850,39 @@ elab_proj(Dot_tree* t, Term* t1, Term* t2, Tuple_type* tup_type) {
   return new Unit(t->loc, get_unit_type());
 }
 
-// FIXME: Implement me too.
+// Returns a Mem term whose t1 is a record and whose t2 is a Var
 Expr*
-elab_mem(Dot_tree* t, Term* t1, Term* t2, Record_type* rec_type) {
-  return new Unit(t->loc, get_unit_type());
+elab_mem(Dot_tree* t, Term* t1, Tree* t2, Record_type* rec_type) {
+  Scope_guard scope(member_scope);
+  //push the names in the record onto the scope
+  Term_seq* vars = rec_type->members();
+  for (auto v : *vars) {
+    declare(v);
+  }
+  // now we elaborate the second term with 
+  // the scope so it'll recognize the label following the '.'
+  Term* proj = elab_term(t2);
+
+  return new Mem(t->loc, get_unit_type(), t1, proj);
+}
+
+// Elaboration for a column projection 
+// 'List'.'colname'
+Expr*
+elab_col(Dot_tree* t, Term* t1, Tree* t2, List_type* list_type) {
+  Scope_guard scope(member_scope);
+
+  // check if the list actually has table type
+  if (Record_type* r = as<Record_type>(list_type->type())) {
+    //push the members onto the scope so elab works
+    for (auto v : *r->members()) {
+      declare(v);
+    }
+    Term* col = elab_term(t2);
+    return new Mem(t->loc, get_unit_type(), t1, col);
+  }
+  else
+    return nullptr; // TODO: should try some other form of proj
 }
 
 // Elaborate a dotted access expression. Note that the elaboration
@@ -869,21 +898,209 @@ elab_mem(Dot_tree* t, Term* t1, Term* t2, Record_type* rec_type) {
 Expr*
 elab_dot(Dot_tree* t) {
   Term* t1 = elab_term(t->object());
-  Term* t2 = elab_term(t->elem());
 
-  if (not t1 or not t2)
+  if (not t1)
     return nullptr;
 
   Type* type = get_type(t1);
-  if (Tuple_type* tup = as<Tuple_type>(type))
-    return elab_proj(t, t1, t2, tup);
-  if (Record_type* rec = as<Record_type>(type))
-    return elab_mem(t, t1, t2, rec);
 
-  error(t1->loc) << format("'{}' is not a tuple or record", pretty(t1));
+  //elaborate the term following the dot differently for each case
+  if (Tuple_type* tup = as<Tuple_type>(type)) {
+    Term* t2 = elab_term(t->elem());
+    return elab_proj(t, t1, t2, tup);
+  }
+  if (Record_type* rec = as<Record_type>(type)) {
+    Tree* t2 = t->elem();
+    return elab_mem(t, t1, t2, rec);
+  }
+  if(List_type* list = as<List_type>(type)) {
+    Tree* t2 = t->elem();
+    return elab_col(t, t1, t2, list);
+  }
+
+  error(t1->loc) << format("'{}' is not a tuple, record, or list", pretty(t1));
   return nullptr;
 }
 
+// Elaboration for the table term
+Expr*
+elab_select(Select_tree* t) { 
+  //elab the table
+  Term* t2 = elab_term(t->t2);
+
+  //check for the table type
+  if (List_type* l_type = as<List_type>(get_type(t2))) {
+    if (Record_type* r_type = as<Record_type>(l_type->type())) {
+
+    }
+    else
+      error(t->loc) << format("'{}' is not a list of records", pretty(t2));
+  }
+
+  //elab the projection list
+  Term* t1 = elab_term(t->t1);
+  //elab the condition
+  Term* t3 = elab_term(t->t3);
+
+  return new Select_from_where(get_kind_type(), t1, t2, t3);
+}
+
+Expr*
+elab_join(Join_on_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+  Term* t3 = elab_term(t->t3);
+
+  Type* type_t1 = get_type(t1);
+  Type* type_t2 = get_type(t2);
+
+  //check that t1 and t2 are the same type
+  if(!is_same(type_t1, type_t2))
+    error(t->loc) << format("mismatched types '{0}' and '{1}'", 
+                            pretty(type_t1), 
+                            pretty(type_t2));
+
+  //check that t3 is bool type
+  Type* type_t3 = get_type(t3);
+  if (not is_same(type_t3, get_bool_type())) {
+    error(t3->loc) << format("mismatched types '{0}'", 
+                            pretty(type_t3));
+    return nullptr;
+  }
+
+  return new Join(type_t1, t1, t2, t3);
+}
+
+Expr*
+elab_union(Union_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  Type* type_t1 = get_type(t1);
+  Type* type_t2 = get_type(t2);
+
+  if(!is_same(type_t1, type_t2))
+    error(t->loc) << format("mismatched types '{0}' and '{1}'", 
+                            pretty(type_t1), 
+                            pretty(type_t2));
+
+  Type* type1 = get_type(t1);
+  return new Union(type1, t1, t2);
+}
+
+Expr*
+elab_intersect(Intersect_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  Type* type_t1 = get_type(t1);
+  Type* type_t2 = get_type(t2);
+
+  if(!is_same(type_t1, type_t2))
+    error(t->loc) << format("mismatched types '{0}' and '{1}'", 
+                            pretty(type_t1), 
+                            pretty(type_t2));
+
+  Type* type1 = get_type(t1);
+  return new Intersect(type1, t1, t2);
+}
+
+Expr*
+elab_except(Except_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  Type* type_t1 = get_type(t1);
+  Type* type_t2 = get_type(t2);
+
+  if(!is_same(type_t1, type_t2))
+    error(t->loc) << format("mismatched types '{0}' and '{1}'", 
+                            pretty(type_t1), 
+                            pretty(type_t2));
+
+  Type* type1 = get_type(t1);
+  return new Except(type1, t1, t2);
+}
+
+Expr*
+elab_and(And_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  // Check that t1 has type Bool.
+  Type* bool_type = get_bool_type();
+  Type* type1 = get_type(t1);
+  if (not is_same(type1, get_bool_type())) {
+    error(t1->loc) << 
+      format("term {} does not have type '{}'", typed(t1), pretty(bool_type));
+    return nullptr;
+  }
+
+  //Check that t2 has type Bool
+  Type* type2 = get_type(t2);
+  if (not is_same(type2, get_bool_type())) {
+    error(t2->loc) << 
+      format("term {} does not have type '{}'", typed(t2), pretty(bool_type));
+    return nullptr;
+  }
+
+  return new And(t1->loc, get_bool_type(), t1, t2);
+}
+
+Expr*
+elab_or(Or_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+
+  // Check that t1 has type Bool.
+  Type* bool_type = get_bool_type();
+  Type* type1 = get_type(t1);
+  if (not is_same(type1, get_bool_type())) {
+    error(t1->loc) << 
+      format("term {} does not have type '{}'", typed(t1), pretty(bool_type));
+    return nullptr;
+  }
+
+  //Check that t2 has type Bool
+  Type* type2 = get_type(t2);
+  if (not is_same(type2, get_bool_type())) {
+    error(t2->loc) << 
+      format("term {} does not have type '{}'", typed(t2), pretty(bool_type));
+    return nullptr;
+  }
+
+  return new Or(t1->loc, get_bool_type(), t1, t2);
+}
+
+Expr*
+elab_not(Not_tree* t) {
+  Term* t1 = elab_term(t->t1);
+
+  // Check that t1 has type Bool.
+  Type* bool_type = get_bool_type();
+  Type* type1 = get_type(t1);
+  if (not is_same(type1, get_bool_type())) {
+    error(t1->loc) << 
+      format("term {} does not have type '{}'", typed(t1), pretty(bool_type));
+    return nullptr;
+  }
+
+  return new Not(t1->loc, get_bool_type(), t1);
+}
+
+Expr*
+elab_eq(Eq_comp_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+  return new Equals(t1->loc, get_bool_type(), t1, t2);
+}
+
+Expr*
+elab_less(Less_tree* t) {
+  Term* t1 = elab_term(t->t1);
+  Term* t2 = elab_term(t->t2);
+  return new Less(t1->loc, get_bool_type(), t1, t2);
+}
 
 // Elaborate a program. The result type of the entire program
 // is that of the last statement.
@@ -939,6 +1156,16 @@ elab_expr(Tree* t) {
   case typeof_tree: return elab_typeof(as<Typeof_tree>(t));
   case comma_tree: return elab_comma(as<Comma_tree>(t));
   case dot_tree: return elab_dot(as<Dot_tree>(t));
+  case select_tree: return elab_select(as<Select_tree>(t));
+  case join_on_tree: return elab_join(as<Join_on_tree>(t));
+  case and_tree: return elab_and(as<And_tree>(t));
+  case or_tree: return elab_or(as<Or_tree>(t));
+  case not_tree: return elab_not(as<Not_tree>(t));
+  case eq_comp_tree: return elab_eq(as<Eq_comp_tree>(t));
+  case less_tree: return elab_less(as<Less_tree>(t));
+  case union_tree: return elab_union(as<Union_tree>(t));
+  case intersect_tree: return elab_intersect(as<Intersect_tree>(t));
+  case except_tree: return elab_except(as<Except_tree>(t));
   case prog_tree: return elab_prog(as<Prog_tree>(t));
   default: break;
   }

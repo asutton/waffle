@@ -68,6 +68,7 @@ is_less(Expr* a, Expr* b) {
   case abs_term: return less_binary(as<Abs>(a), as<Abs>(b));
   case app_term: return less_binary(as<App>(a), as<App>(a));
   case ref_term: return less_unary(as<Ref>(a), as<Ref>(b));
+  case def_term: return less_unary(as<Def>(a), as<Def>(b));
   case kind_type: return false;
   case unit_type: return false;
   case bool_type: return false;

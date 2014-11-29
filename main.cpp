@@ -9,6 +9,9 @@
 #include "ast.hpp"
 #include "eval.hpp"
 
+//remove after testing
+#include "type.hpp"
+
 int main() {
   Language lang;
 
@@ -42,7 +45,6 @@ int main() {
   }
   std::cout << "== parsed ==\n" << pretty(tree) << '\n';
 
-
   // ------------------------------------------------------------------------ //
   // Elaboration
   //
@@ -55,7 +57,6 @@ int main() {
     return -1;
   }
   std::cout << "== elaborated ==\n" << pretty(prog) << '\n';
-
 
   // ------------------------------------------------------------------------ //
   // Evaluation

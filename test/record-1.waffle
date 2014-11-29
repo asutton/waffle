@@ -1,3 +1,4 @@
 
 def x = {b=true, n=0, u=unit};
 print typeof x;
+x.b;

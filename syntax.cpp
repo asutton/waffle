@@ -27,6 +27,16 @@ init_trees() {
   init_node(variant_tree, "variant-tree");
   init_node(comma_tree, "comma-tree");
   init_node(dot_tree, "dot-tree");
+  init_node(select_tree, "select-tree");
+  init_node(join_on_tree, "join-on-tree");
+  init_node(union_tree, "union-tree");
+  init_node(intersect_tree, "intersect-tree");
+  init_node(except_tree, "except-tree");
+  init_node(and_tree, "and-tree");
+  init_node(or_tree, "or-tree");
+  init_node(not_tree, "not-tree");
+  init_node(eq_comp_tree, "eq-comp-tree");
+  init_node(less_tree, "less-tree");
   init_node(prog_tree, "prog-tree");
 }
 
@@ -138,6 +148,59 @@ pp_dot(std::ostream& os, Dot_tree* t) {
 }
 
 void
+pp_select(std::ostream& os, Select_tree* t) {
+  os << "select " << pretty(t->t1) 
+     << " from " << pretty(t->t2) 
+     << " where " << pretty(t->t3);
+}
+
+void
+pp_join(std::ostream& os, Join_on_tree* t) {
+  os << pretty(t->t1) << " join " << pretty(t->t2) 
+                   << " on "  << pretty(t->t3);
+}
+
+void
+pp_union(std::ostream& os, Union_tree* t) {
+  os << pretty(t->t1) << " union " << pretty(t->t2);
+}
+
+void
+pp_intersect(std::ostream& os, Intersect_tree* t) {
+  os << pretty(t->t1) << " intersect " << pretty(t->t2);
+}
+
+void
+pp_except(std::ostream& os, Except_tree* t) {
+  os << pretty(t->t1) << " except " << pretty(t->t2);
+}
+
+void
+pp_and(std::ostream& os, And_tree* t) {
+  os << pretty(t->t1) << " and " << pretty(t->t2);
+}
+
+void
+pp_or(std::ostream& os, Or_tree* t) {
+  os << pretty(t->t1) << " or " << pretty(t->t2);
+}
+
+void
+pp_eq_comp(std::ostream& os, Eq_comp_tree* t) {
+  os << pretty(t->t1) << " == " << pretty(t->t2);
+}
+
+void
+pp_less(std::ostream& os, Less_tree* t) {
+  os << pretty(t->t1) << " < " << pretty(t->t2);
+}
+
+void
+pp_not(std::ostream& os, Not_tree* t) {
+  os << "not " << pretty(t->t1);
+}
+
+void
 pp_prog(std::ostream& os, Prog_tree* t) {
   for (Tree* s : *t->stmts())
     os << pretty(s) << ';' << '\n';
@@ -175,6 +238,16 @@ print(std::ostream& os, Tree* t) {
   case variant_tree: return pp_variant(os, as<Variant_tree>(t));
   case comma_tree: return pp_comma(os, as<Comma_tree>(t));
   case dot_tree: return pp_dot(os, as<Dot_tree>(t));
+  case select_tree: return pp_select(os, as<Select_tree>(t));
+  case join_on_tree: return pp_join(os, as<Join_on_tree>(t));
+  case union_tree: return pp_union(os, as<Union_tree>(t));
+  case intersect_tree: return pp_intersect(os, as<Intersect_tree>(t));
+  case except_tree: return pp_except(os, as<Except_tree>(t));
+  case and_tree: return pp_and(os, as<And_tree>(t));
+  case or_tree: return pp_or(os, as<Or_tree>(t));
+  case not_tree: return pp_not(os, as<Not_tree>(t));
+  case eq_comp_tree: return pp_eq_comp(os, as<Eq_comp_tree>(t));
+  case less_tree: return pp_less(os, as<Less_tree>(t));
   case prog_tree: return pp_prog(os, as<Prog_tree>(t));
   }
   lang_unreachable(format("print unknown node '{}'", node_name(t)));

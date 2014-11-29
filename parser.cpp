@@ -253,6 +253,8 @@ parse_elem_list(Parser& p, Token_kind close_tok) {
     // Either break or continue.
     if (parse::next_token_is(p, close_tok))
       break;
+    if (parse::next_token_is(p, rbracket_tok))
+      break;
     parse::expect(p, comma_tok);
   }
   return ts;
@@ -356,6 +358,27 @@ parse_grouped_expr(Parser& p) {
   return nullptr;
 }
 
+// Parse selection.
+//
+//    stmt ::= select col from table where bool
+Tree*
+parse_select_expr(Parser& p) {
+    if(const Token* s = parse::accept(p, select_tok)) {
+      if (Tree* t1 = parse_expr(p)) {
+        if(parse::expect(p, from_tok)) {
+          if (Tree* t2 = parse_expr(p)) {
+            if(parse::expect(p, where_tok)) {
+              if (Tree* t3 = parse_expr(p)) { 
+                return new Select_tree(s,t1,t2,t3);
+              }
+            }
+          }
+        }
+      }
+    }
+    return nullptr;
+}
+
 // Parse a primary expression.
 //
 //    primary-term ::= primary-lambda-term | grouped-term
@@ -401,6 +424,121 @@ parse_dot_expr(Parser& p, Tree* t1) {
   return nullptr;
 }
 
+// Parse an and expression
+//
+//    and-expr ::= expr and expr
+Tree*
+parse_and_expr(Parser& p, Tree* t1) {
+  if(parse::accept(p, and_tok)) {
+    if(Tree* t2 = parse_expr(p))
+      return new And_tree(t1, t2);
+    else
+      parse::parse_error(p) << "expected 'expr' after 'and'";
+  }
+  return nullptr;
+}
+
+// Parse an or expression
+//
+//    or-expr ::= expr or expr
+Tree*
+parse_or_expr(Parser& p, Tree* t1) {
+  if(parse::accept(p, or_tok)) {
+    if(Tree* t2 = parse_expr(p))
+      return new Or_tree(t1, t2);
+    else
+      parse::parse_error(p) << "expected 'expr' after 'or'";
+  }
+  return nullptr;
+}
+
+// Parse an eq-comp expression
+//
+//    eq-comp-expr ::= expr == expr
+Tree*
+parse_eq_comp_expr(Parser& p, Tree* t1) {
+  if(const Token* t = parse::accept(p, eq_comp_tok)) {
+    if(Tree* t2 = parse_expr(p))
+      return new Eq_comp_tree(t1, t2);
+    else
+      parse::parse_error(p) << "expected 'expr' after '=='";
+  }
+  return nullptr;
+}
+
+// Parse an less expression
+//
+//    less-expr ::= expr < expr
+Tree*
+parse_less_expr(Parser& p, Tree* t1) {
+  if(const Token* t = parse::accept(p, less_tok)) {
+    if(Tree* t2 = parse_expr(p))
+      return new Less_tree(t1, t2);
+    else
+      parse::parse_error(p) << "expected 'expr' after '<'";
+  }
+  return nullptr;
+}
+
+// Parse a union expression
+//
+//    union-expr ::= expr union expr
+Tree*
+parse_union(Parser& p, Tree* t1) {
+  if(parse::accept(p, union_tok)) {
+    if(Tree* t2 = parse_expr(p))
+      return new Union_tree(t1, t2);
+    else
+      parse::parse_error(p) << "expected 'expr' after 'union'";
+  }
+  return nullptr;
+}
+
+// Parse an intersect expression
+//
+//    intersect-expr ::= expr union expr
+Tree*
+parse_intersect(Parser& p, Tree* t1) {
+  if(parse::accept(p, intersect_tok)) {
+    if(Tree* t2 = parse_expr(p))
+      return new Intersect_tree(t1, t2);
+    else
+      parse::parse_error(p) << "expected 'expr' after 'intersect'";
+  }
+}
+
+// Parse an except expression
+//
+//    except-expr ::= expr except expr
+Tree*
+parse_except(Parser& p, Tree* t1) {
+  if(parse::accept(p, except_tok)) {
+    if(Tree* t2 = parse_expr(p))
+      return new Except_tree(t1, t2);
+    else
+      parse::parse_error(p) << "expected 'table_expr' after 'Join'";
+  }
+}
+
+// Parse Join.
+// stm t1 join t2
+Tree*
+parse_join(Parser& p, Tree* t1) {
+    if(const Token* s = parse::accept(p, join_tok)) {
+      if(Tree* t2 = parse_expr(p))
+        if(parse::expect(p, on_tok)) 
+          if(Tree* t3 = parse_expr(p))
+            return new Join_on_tree(s,t1,t2,t3);
+          else
+            parse::parse_error(p) << "expected 'expr' after 'on'";
+        else
+          parse::parse_error(p) << "expected 'expr' after 'join'"; 
+      else
+        parse::parse_error(p) << "expected 'expr' before 'join'"; 
+    }
+    return nullptr;
+}
+
 // Parse a postfix expr.
 //
 //    postfix-expr ::= applicaiton-expr
@@ -411,6 +549,22 @@ parse_postfix_expr(Parser& p) {
       if (Tree* t2 = parse_dot_expr(p, t1))
         t1 = t2;
       else if (Tree* t2 = parse_application_expr(p, t1)) 
+        t1 = t2;
+      else if (Tree* t2 = parse_and_expr(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_or_expr(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_eq_comp_expr(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_less_expr(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_union(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_intersect(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_except(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_join(p, t1))
         t1 = t2;
       else 
         break;
@@ -514,13 +668,48 @@ parse_typeof_expr(Parser& p) {
   return nullptr;
 }
 
+// Parse a not expression
+//
+//    not-expr ::= 'not' expr
+Tree*
+parse_not_expr(Parser& p) {
+  if (const Token* k = parse::accept(p, not_tok)) {
+    if (Tree* t = parse_expr(p))
+      return new Not_tree(k, t);
+    else
+      parse::parse_error(p) << "expected 'expr' after 'not'";
+  }
+  return nullptr;
+}
+
+// Parse the schema of a table 
+//
+//    schema-expr ::= [x1:T1,...,xn:Tn]
+Tree_seq*
+parse_schema_expr(Parser& p) {
+  if(parse::accept(p, lbracket_tok)) {
+    if(Tree_seq* schema = parse_elem_list(p, rbracket_tok)) {
+      if(parse::accept(p, rbracket_tok))
+        return schema;
+      else
+        parse::parse_error(p) << "Expected ']' after schema definition";
+    }
+  }
+  else
+    parse::parse_error(p) << "Expected '[' after 'table'";
+
+  return nullptr;
+}
+
 // Parse a prefix expr.
 //
 //    prefix-expr ::= if-expr | succ-epxr | pred-expr | iszero-expr
-//                  | print-expr | typeof-expr
+//                    | not-expr | print-expr | typeof-expr
 Tree*
 parse_prefix_expr(Parser& p) {
   if (Tree* t = parse_if_expr(p))
+    return t;
+  if (Tree* t = parse_select_expr(p))
     return t;
   if (Tree* t = parse_succ_expr(p))
     return t;
@@ -531,6 +720,8 @@ parse_prefix_expr(Parser& p) {
   if (Tree* t = parse_print_expr(p))
     return t;
   if (Tree* t = parse_typeof_expr(p))
+    return t;
+  if (Tree* t = parse_not_expr(p))
     return t;
   return parse_postfix_expr(p);
 }
@@ -687,3 +878,5 @@ Parser::operator()(Token_iterator f, Token_iterator l) {
   use_diagnostics(diags);
   return parse_program(*this);
 }
+
+

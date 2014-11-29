@@ -1,3 +1,4 @@
+#include <iostream>
 
 #include "subst.hpp"
 #include "ast.hpp"
@@ -87,10 +88,18 @@ subst_var(Var* v, const Subst& sub) { return v; }
 // mapping in the declaration.
 inline Expr*
 subst_ref(Ref* t, const Subst& sub) {
-  if (Expr* s = sub.get(t->decl()))
+  if (Expr* s = sub.get(t->decl())) {
     return s;
+  }
   else
     return t;
+}
+
+inline Expr*
+subst_mem(Mem* t, const Subst& sub) {
+  Term* t1 = subst_term(t->t1, sub);
+  Term* t2 = subst_term(t->t2, sub);
+  return new Mem(t->loc, get_unit_type(), t1, t2);
 }
 
 } // namespace
@@ -104,6 +113,11 @@ subst(Expr* e, const Subst& sub) {
   case false_term: return e;
   case if_term: return subst_ternary_term(as<If>(e), sub);
   case int_term: return e;
+  case and_term: return subst_binary_term(as<And>(e), sub);
+  case or_term: return subst_binary_term(as<Or>(e), sub);
+  case equals_term: return subst_binary_term(as<Equals>(e), sub);
+  case less_term: return subst_binary_term(as<Less>(e), sub);
+  case not_term: return subst_unary_term(as<Not>(e), sub);
   case succ_term: return subst_unary_term(as<Succ>(e), sub);
   case pred_term: return subst_unary_term(as<Pred>(e), sub);
   case iszero_term: return subst_unary_term(as<Iszero>(e), sub);
@@ -111,6 +125,7 @@ subst(Expr* e, const Subst& sub) {
   case abs_term: return subst_binary_term(as<Abs>(e), sub);
   case app_term: return subst_binary_term(as<App>(e), sub);
   case ref_term: return subst_ref(as<Ref>(e), sub);
+  case mem_term: return subst_mem(as<Mem>(e), sub);
   case kind_type: return e;
   case unit_type: return e;
   case bool_type: return e;

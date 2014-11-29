@@ -26,6 +26,13 @@ init_nodes() {
   init_node(comma_term, "comma");
   init_node(proj_term, "proj");
   init_node(mem_term, "mem");
+  init_node(col_term, "col");
+  init_node(table_term, "table");
+  init_node(and_term, "and");
+  init_node(or_term, "or");
+  init_node(not_term, "not");
+  init_node(equals_term, "eq");
+  init_node(less_term, "lt");
   // Types
   init_node(kind_type, "kind-type");
   init_node(unit_type, "unit-type");
@@ -175,6 +182,11 @@ pp_mem(std::ostream& os, Mem* t) {
   os << pretty(t->record()) << '.' << pretty(t->member());
 }
 
+void
+pp_col(std::ostream& os, Col* t) {
+  os << pretty(t->table()) << '.' << pretty(t->attr());
+}
+
 template<typename T>
   void 
   pp_ref_id(std::ostream& os, T* t) {
@@ -204,6 +216,31 @@ pp_prog(std::ostream& os, Prog* t) {
 }
 
 void
+pp_and(std::ostream& os, And* t) {
+  os << pretty(t->t1) << " and " << pretty(t->t2);
+}
+
+void
+pp_or(std::ostream& os, Or* t) {
+  os << pretty(t->t1) << " or " << pretty(t->t2);
+}
+
+void
+pp_not(std::ostream& os, Not* t) {
+  os << "not " << pretty(t->t1);
+}
+
+void
+pp_equals(std::ostream& os, Equals* t) {
+  os << pretty(t->t1) << " == " << pretty(t->t2);
+}
+
+void
+pp_less(std::ostream& os, Less* t) {
+  os << pretty(t->t1) << " < " << pretty(t->t2);
+}
+
+void
 pp_arrow_type(std::ostream& os, Arrow_type* t) { 
   os << pretty(t->t1) << " -> " << group(pretty(t->t2));
 }
@@ -226,6 +263,34 @@ pp_list_type(std::ostream& os, List_type* t) {
 void
 pp_record_type(std::ostream& os, Record_type* t) {
   os << '{' << commas(t->members()) << '}';
+}
+
+void
+pp_select(std::ostream& os, Select_from_where* t) {
+  os << "select " << pretty(t->t1) 
+     << " from " << pretty(t->t2) 
+     << " where " << pretty(t->t3);
+}
+
+void
+pp_join(std::ostream& os, Join* t) {
+  os << pretty(t->t1) << " join " << pretty(t->t2) 
+                   << " on "  << pretty(t->t3);
+}
+
+void
+pp_union(std::ostream& os, Union* t) {
+  os << pretty(t->t1) << " union " << pretty(t->t2);
+}
+
+void
+pp_intersect(std::ostream& os, Intersect* t) {
+  os << pretty(t->t1) << " intersect " << pretty(t->t2);
+}
+
+void
+pp_except(std::ostream& os, Except* t) {
+  os << pretty(t->t1) << " except " << pretty(t->t2);
 }
 
 // Print the wildcard type. Omit the explicit type qualifier
@@ -273,8 +338,20 @@ pp_expr(std::ostream& os, Node* t) {
   case record_term: return pp_record(os, as<Record>(t));
   case comma_term: return pp_comma(os, as<Comma>(t));
   case proj_term: return pp_proj(os, as<Proj>(t));
+  case mem_term: return pp_mem(os, as<Mem>(t));
   case print_term: return pp_print(os, as<Print>(t));
   case prog_term: return pp_prog(os, as<Prog>(t));
+  case and_term: return pp_and(os, as<And>(t));
+  case or_term: return pp_or(os, as<Or>(t));
+  case not_term: return pp_not(os, as<Not>(t));
+  case equals_term: return pp_equals(os, as<Equals>(t));
+  case less_term: return pp_less(os, as<Less>(t));
+  case select_term: return pp_select(os, as<Select_from_where>(t));
+  case union_term: return pp_union(os, as<Union>(t));
+  case intersect_term: return pp_intersect(os, as<Intersect>(t));
+  case except_term: return pp_except(os, as<Except>(t));
+  case col_term: return pp_col(os, as<Col>(t));
+  case join_on_term: return pp_join(os, as<Join>(t));
   // Types
   case unit_type: return pp_string(os, "Unit");
   case bool_type: return pp_string(os, "Bool");
