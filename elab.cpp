@@ -1102,6 +1102,17 @@ elab_less(Less_tree* t) {
   return new Less(t1->loc, get_bool_type(), t1, t2);
 }
 
+Expr*
+elab_as(As_tree* t) {
+  if(Id* id = as<Id>(elab_name(t->name()))) {
+    Expr* value = elab_expr(t->term());
+    Def* def = new Def(get_type(value), id, value);
+    declare(id, def);
+    return elab_id(as<Id_tree>(t->name()));
+  }
+  return nullptr;
+}
+
 // Elaborate a program. The result type of the entire program
 // is that of the last statement.
 //
@@ -1139,6 +1150,7 @@ elab_expr(Tree* t) {
   case id_tree: return elab_id(as<Id_tree>(t));
   case lit_tree: return elab_lit(as<Lit_tree>(t));
   case def_tree: return elab_def(as<Def_tree>(t));
+  case as_tree: return elab_as(as<As_tree>(t));
   case init_tree: return elab_init(as<Init_tree>(t));
   case var_tree: return elab_var(as<Var_tree>(t));
   case abs_tree: return elab_abs(as<Abs_tree>(t));

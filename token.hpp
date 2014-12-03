@@ -45,6 +45,7 @@ constexpr Token_kind or_tok        = make_token(114);
 constexpr Token_kind not_tok       = make_token(115);
 constexpr Token_kind eq_comp_tok   = make_token(116); // eq
 constexpr Token_kind less_tok      = make_token(117); // lt
+constexpr Token_kind as_tok        = make_token(118);
 // Type names
 constexpr Token_kind bool_type_tok = make_token(200);
 constexpr Token_kind nat_type_tok  = make_token(201);

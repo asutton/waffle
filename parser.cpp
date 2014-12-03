@@ -539,6 +539,21 @@ parse_join(Parser& p, Tree* t1) {
     return nullptr;
 }
 
+// Bind a term to a reference
+// t as id
+Tree*
+parse_as(Parser& p, Tree* t1) {
+  if(const Token* t = parse::accept(p, as_tok)) {
+    if(Tree* t2 = parse_name(p)) {
+      return new As_tree(t1, t2);
+    }
+    else
+      parse::parse_error(p) << "expected 'id' after 'as'";
+    
+  }
+  return nullptr;
+}
+
 // Parse a postfix expr.
 //
 //    postfix-expr ::= applicaiton-expr
@@ -565,6 +580,8 @@ parse_postfix_expr(Parser& p) {
       else if (Tree* t2 = parse_except(p, t1))
         t1 = t2;
       else if (Tree* t2 = parse_join(p, t1))
+        t1 = t2;
+      else if (Tree* t2 = parse_as(p, t1))
         t1 = t2;
       else 
         break;
@@ -827,7 +844,6 @@ parse_def_decl(Parser& p) {
   else 
    return nullptr;
 }
-
 
 // Parse a statement.
 //
