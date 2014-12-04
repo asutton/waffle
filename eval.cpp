@@ -470,6 +470,39 @@ merge_tables(List* a, List* b) {
   return res;
 }
 
+// generates the result of substituting through conditions
+// performed on comma seperated tables given in from clause of select
+Term_seq*
+subst_conds(Comma* froms, Term* cond) {
+  // in the case that we have more than one table in the
+  // from clause, we need to perform multiple substs through
+  // the condition
+  Term_seq* conds = new Term_seq();
+
+  Expr_seq* table_refs = froms->elems();
+  for(auto tr : *table_refs) {
+    Ref* ref = as<Ref>(tr);
+    List* table = as<List>(as<Def>(ref->decl())->value());
+  }
+}
+
+// generates the result of substituting through conditions
+// performed in case there is only one table given in select clause
+Term_seq*
+subst_conds(List* table, Ref* from, Term* cond) {
+  // eval the ref first
+  Term* subst = eval(as<Def>(from->decl()));
+
+  Term_seq* records = table->elems();
+  Term_seq* conds = new Term_seq();
+  for(auto r : *records) {
+    Subst sub { subst, r };
+    Term* res = subst_term(cond, sub);
+    conds->push_back(res);
+  }
+  return conds;
+}
+
 //evaluation for select t1 from t2 where t3
 Term*
 eval_select_from_where(Select_from_where* t) {
@@ -502,25 +535,17 @@ eval_select_from_where(Select_from_where* t) {
     }
   }
 
-  // t2 should be a Def or a Ref
+  // t2 should be a Ref or a comma seperated list of Refs
   // we cannot have a table with no name here
-  Term* subst;
-  if (Ref* ref = as<Ref>(t->t2))
-    subst = eval(as<Def>(ref->decl()));
-  if (Def* def = as<Def>(t->t2))
-    subst = eval(def);
-
   // first we need to produce a set of conditions
   // t3 is not just 1 condition, it is a condition for every record in the list
   // for each record in t2, we need to substitute the ref t2 in t3 with that record
   // this gives us a list of conditions which we can evaluate
-  Term_seq* records = t2->elems();
-  Term_seq* conds = new Term_seq();
-  for(auto r : *records) {
-    Subst sub { subst, r };
-    Term* res = subst_term(t->cond(), sub);
-    conds->push_back(res);
-  }
+  Term_seq* conds;
+  if (Ref* ref = as<Ref>(t->t2))
+    conds = subst_conds(t2, ref, t->t3);
+  if (Comma* com = as<Comma>(t->t2))
+    conds = subst_conds(com, t->t3);
 
   // iterate through the table's records and the conditions
   // if the condition evaluates to true then add the record to result
