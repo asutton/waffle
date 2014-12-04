@@ -11,6 +11,7 @@ constexpr Node_kind id_tree      = make_tree_node(1);   // identifiers
 constexpr Node_kind lit_tree     = make_tree_node(2);   // values and types
 constexpr Node_kind def_tree     = make_tree_node(100); // def x = t
 constexpr Node_kind init_tree    = make_tree_node(101); // x=t
+constexpr Node_kind as_tree      = make_tree_node(102); // t as id (ref to a term)
 constexpr Node_kind var_tree     = make_tree_node(110); // x:T
 constexpr Node_kind abs_tree     = make_tree_node(111); // \v.t
 constexpr Node_kind fn_tree      = make_tree_node(112); // \(v*).t
@@ -69,6 +70,19 @@ struct Init_tree : Tree {
 
   Tree* name() const { return t1; }
   Tree* term() const { return t2; }
+
+  Tree* t1;
+  Tree* t2;
+};
+
+// Allows users to bind a term to a reference
+// t as id
+struct As_tree : Tree {
+  As_tree(Tree* t, Tree* n)
+    : Tree(as_tree, t->loc), t1(t), t2(n) { }
+
+  Tree* term() const { return t1; }
+  Tree* name() const { return t2; }
 
   Tree* t1;
   Tree* t2;
