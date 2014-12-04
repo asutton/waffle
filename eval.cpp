@@ -571,11 +571,81 @@ eval_select_from_where(Select_from_where* t) {
 
 Term*
 eval_join(Join* t) {
+  //evaluate the list first
+  List* t1 = as<List>(eval(t->t1));
+  List* t2 = as<List>(eval(t->t2));
+
+  Term_seq* records1 = t1->elems();
+  Term_seq* records2 = t2->elems();
+
+  //std::cout << "T1" << pretty(t1);
+
+  //merge the individual records in the table
+  Term_seq* crossproduct = new Term_seq();
+  
+
+  //make cross product for t1 and t2
+  for (auto it_a : *records1) {
+    for (auto it_b : *records2) {
+      //std::cout << "MERGE" << pretty(it_a) << "AND" << pretty(it_b) << '\n';
+      crossproduct->push_back(merge_records(as<Record>(it_a), as<Record>(it_b)));
+    }
+  }
+  
+  Term* subst_t1;
+  if (Ref* ref = as<Ref>(t->t1)) {
+    subst_t1 = eval(as<Def>(ref->decl()));
+  }
+
+  Term* subst_t2;
+  if (Ref* ref = as<Ref>(t->t2)) {
+    subst_t2 = eval(as<Def>(ref->decl()));
+  }
+
+  
+  Term_seq* conds = new Term_seq();
+  for(auto r : *crossproduct) {
+    // std::cout<<pretty(r)<<std::endl;
+    // std::cout << "SUBST: " << pretty(subst) << " INTO " << pretty(r); 
+    Subst sub1 {subst_t1, r};
+    Subst sub2 {subst_t2, r};
+    Term* res1 = subst_term(t->join_cond(), sub1);
+    Term* res2 = subst_term(res1, sub2);
+    /*
+    Equals* eq = as<Equals>(res);
+    Mem* mem = as<Mem>(eq->t1);
+    Expr* record = as<Ref>(mem->t1)->decl();
+    std::cout << pretty(subst_t2) << '\n';
+    std::cout << pretty(record) << '\n'<<'\n';
+    */
+    //conds->push_back(res1);
+    conds->push_back(res2);
+
+  }
+ 
+ 
+  Term_seq* result = new Term_seq();
+  auto crossproduct_it = crossproduct->begin();
+  for (auto cond_it : *conds) {
+    Term* _true = get_true();
+    std::cout<<"condition :" << pretty(cond_it) << '\n';
+    if(is_same(_true, eval(cond_it))) {
+        result->push_back(*crossproduct_it);
+    }
+    ++crossproduct_it;
+  }
+
+  for (auto it : *result) {
+    std::cout<<pretty(it)<<'\n';
+  }
+
   //perform product between tables
   //perform selection of resulting product
   //perform projection on table
   //populate new table
   //ereturn new table
+  //return new List(get_type(result->begin(), result);
+  
   return nullptr;
 }
 
