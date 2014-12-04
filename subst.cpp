@@ -131,6 +131,7 @@ subst(Expr* e, const Subst& sub) {
   case bool_type: return e;
   case nat_type: return e;
   case arrow_type: return e;
+  case record_term: return e;
   default: break;
   }
   lang_unreachable(format("substitution into unkown term '{}'", node_name(e)));

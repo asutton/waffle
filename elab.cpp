@@ -955,10 +955,28 @@ elab_join(Join_on_tree* t) {
   Type* type_t2 = get_type(t2);
 
   //check that t1 and t2 are the same type
-  if(!is_same(type_t1, type_t2))
-    error(t->loc) << format("mismatched types '{0}' and '{1}'", 
-                            pretty(type_t1), 
-                            pretty(type_t2));
+  //if(!is_same(type_t1, type_t2))
+    //error(t->loc) << format("mismatched types '{0}' and '{1}'", 
+      //                      pretty(type_t1), 
+        //                    pretty(type_t2));
+
+  //check that t1 and t2 are table type
+  if (List_type* l_type = as<List_type>(get_type(t1))) {
+    if (Record_type* r_type = as<Record_type>(l_type->type())) {
+
+    }
+    else
+      error(t->loc) << format("'{}' is not a list of records", pretty(t2));
+  }
+
+  if (List_type* l_type = as<List_type>(get_type(t2))) {
+    if (Record_type* r_type = as<Record_type>(l_type->type())) {
+
+    }
+    else
+      error(t->loc) << format("'{}' is not a list of records", pretty(t2));
+  }
+
 
   //check that t3 is bool type
   Type* type_t3 = get_type(t3);
