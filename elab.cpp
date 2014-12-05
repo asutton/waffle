@@ -953,12 +953,7 @@ elab_join(Join_on_tree* t) {
 
   Type* type_t1 = get_type(t1);
   Type* type_t2 = get_type(t2);
-
-  //check that t1 and t2 are the same type
-  //if(!is_same(type_t1, type_t2))
-    //error(t->loc) << format("mismatched types '{0}' and '{1}'", 
-      //                      pretty(type_t1), 
-        //                    pretty(type_t2));
+  Type* _type; //merged type
 
   //check that t1 and t2 are table type
   if (List_type* l_type = as<List_type>(get_type(t1))) {
@@ -969,9 +964,15 @@ elab_join(Join_on_tree* t) {
       error(t->loc) << format("'{}' is not a list of records", pretty(t2));
   }
 
-  if (List_type* l_type = as<List_type>(get_type(t2))) {
-    if (Record_type* r_type = as<Record_type>(l_type->type())) {
-
+  if (List_type* l2_type = as<List_type>(get_type(t2))) {
+    if (Record_type* r2_type = as<Record_type>(l2_type->type())) {
+      //set type eq to the two record types merged together
+      Record_type* r1_type = as<Record_type>(as<List_type>(get_type(t1))->type());
+      Term_seq* merge = new Term_seq();
+      merge->insert(merge->end(), r1_type->members()->begin(), r1_type->members()->end());
+      merge->insert(merge->end(), r2_type->members()->begin(), r2_type->members()->end());
+      Record_type* r_type = new Record_type(get_kind_type(), merge);
+      _type = new List_type(get_kind_type(), r_type);
     }
     else
       error(t->loc) << format("'{}' is not a list of records", pretty(t2));
@@ -985,8 +986,8 @@ elab_join(Join_on_tree* t) {
                             pretty(type_t3));
     return nullptr;
   }
-
-  return new Join(type_t1, t1, t2, t3);
+  
+  return new Join(_type, t1, t2, t3);
 }
 
 Expr*

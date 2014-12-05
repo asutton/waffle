@@ -169,7 +169,7 @@ eval_call(Call* t) {
 Term*
 eval_ref(Ref* t) {
   if (Def* def = as<Def>(t->decl())) {
-    if (Term* replace = as<Term>(def->value()))
+    if (Term* replace = as<Term>(eval(as<Term>(def->value()))))
       return replace;
     else
       return nullptr;
@@ -471,22 +471,6 @@ merge_tables(List* a, List* b) {
 }
 
 // generates the result of substituting through conditions
-// performed on comma seperated tables given in from clause of select
-Term_seq*
-subst_conds(Comma* froms, Term* cond) {
-  // in the case that we have more than one table in the
-  // from clause, we need to perform multiple substs through
-  // the condition
-  Term_seq* conds = new Term_seq();
-
-  Expr_seq* table_refs = froms->elems();
-  for(auto tr : *table_refs) {
-    Ref* ref = as<Ref>(tr);
-    List* table = as<List>(as<Def>(ref->decl())->value());
-  }
-}
-
-// generates the result of substituting through conditions
 // performed in case there is only one table given in select clause
 Term_seq*
 subst_conds(List* table, Ref* from, Term* cond) {
@@ -507,7 +491,8 @@ subst_conds(List* table, Ref* from, Term* cond) {
 Term*
 eval_select_from_where(Select_from_where* t) {
   //evaluate the list first
-  List* t2 = as<List>(eval(t->t2));
+  Term* def = eval(t->t2);
+  List* t2 = as<List>(eval(def));
 
   //new term seq to hold var list for record type
   Term_seq* cols = new Term_seq();
@@ -515,6 +500,8 @@ eval_select_from_where(Select_from_where* t) {
   if (Comma* c = as<Comma>(t->t1)) {
     for (auto p : *c->elems()) {
       Mem* m = as<Mem>(p);
+      //eval is inefficient if a table join term
+      //need to fix that
       List* col = as<List>(eval(m));
       cols->push_back(col);
     }
@@ -544,8 +531,14 @@ eval_select_from_where(Select_from_where* t) {
   Term_seq* conds;
   if (Ref* ref = as<Ref>(t->t2))
     conds = subst_conds(t2, ref, t->t3);
-  if (Comma* com = as<Comma>(t->t2))
-    conds = subst_conds(com, t->t3);
+
+  // TODO: Possibly make this work with commas but not likely
+  // if (Comma* com = as<Comma>(t->t2))
+  //   conds = subst_conds(com, t->t3);
+
+  if(conds == nullptr) {
+    return nullptr;
+  }
 
   // iterate through the table's records and the conditions
   // if the condition evaluates to true then add the record to result
@@ -575,19 +568,18 @@ eval_join(Join* t) {
   List* t1 = as<List>(eval(t->t1));
   List* t2 = as<List>(eval(t->t2));
 
+  List_type* t1_type = as<List_type>(get_type(t1));
+  List_type* t2_type = as<List_type>(get_type(t2)); 
+
   Term_seq* records1 = t1->elems();
   Term_seq* records2 = t2->elems();
-
-  //std::cout << "T1" << pretty(t1);
 
   //merge the individual records in the table
   Term_seq* crossproduct = new Term_seq();
   
-
   //make cross product for t1 and t2
   for (auto it_a : *records1) {
     for (auto it_b : *records2) {
-      //std::cout << "MERGE" << pretty(it_a) << "AND" << pretty(it_b) << '\n';
       crossproduct->push_back(merge_records(as<Record>(it_a), as<Record>(it_b)));
     }
   }
@@ -601,52 +593,44 @@ eval_join(Join* t) {
   if (Ref* ref = as<Ref>(t->t2)) {
     subst_t2 = eval(as<Def>(ref->decl()));
   }
-
   
   Term_seq* conds = new Term_seq();
   for(auto r : *crossproduct) {
-    // std::cout<<pretty(r)<<std::endl;
-    // std::cout << "SUBST: " << pretty(subst) << " INTO " << pretty(r); 
     Subst sub1 {subst_t1, r};
     Subst sub2 {subst_t2, r};
     Term* res1 = subst_term(t->join_cond(), sub1);
     Term* res2 = subst_term(res1, sub2);
-    /*
-    Equals* eq = as<Equals>(res);
-    Mem* mem = as<Mem>(eq->t1);
-    Expr* record = as<Ref>(mem->t1)->decl();
-    std::cout << pretty(subst_t2) << '\n';
-    std::cout << pretty(record) << '\n'<<'\n';
-    */
-    //conds->push_back(res1);
     conds->push_back(res2);
-
   }
- 
- 
+
   Term_seq* result = new Term_seq();
   auto crossproduct_it = crossproduct->begin();
   for (auto cond_it : *conds) {
     Term* _true = get_true();
-    std::cout<<"condition :" << pretty(cond_it) << '\n';
     if(is_same(_true, eval(cond_it))) {
         result->push_back(*crossproduct_it);
     }
     ++crossproduct_it;
   }
 
-  for (auto it : *result) {
-    std::cout<<pretty(it)<<'\n';
+  Type* type;
+  //get the type of the two lists put together
+  if(Record_type* r1_type = as<Record_type>(t1_type->type())) {
+    if(Record_type* r2_type = as<Record_type>(t2_type->type())) {
+      //merged record type
+      Term_seq* merge = new Term_seq();
+      merge->insert(merge->end(), r1_type->members()->begin(), r1_type->members()->end());
+      merge->insert(merge->end(), r2_type->members()->begin(), r2_type->members()->end());
+      Record_type* r_type = new Record_type(get_kind_type(), merge);
+      type = new List_type(get_kind_type(), r_type);
+     }
+  }
+  else {
+    // if its not a record then its a primitive and the join results in that type
+    type = get_type(t1); 
   }
 
-  //perform product between tables
-  //perform selection of resulting product
-  //perform projection on table
-  //populate new table
-  //ereturn new table
-  //return new List(get_type(result->begin(), result);
-  
-  return nullptr;
+  return new List(type, result);
 }
 
 Term*
