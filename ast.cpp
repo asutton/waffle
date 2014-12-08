@@ -137,7 +137,12 @@ pp_call(std::ostream& os, Call* t) {
 
 void
 pp_def(std::ostream& os, Def* t) {
-  os << "def " << pretty(t->name()) << " = " << pretty(t->value());
+  os << "def " << pretty(t->name()) << " = " << group(pretty(t->value()));
+}
+
+void
+pp_func(std::ostream& os, Func* t) { 
+  os << "(" << commas(t->parms()) << ") ->" <<pretty(t->returntype())<<" . "<< group(pretty(t->term())); 
 }
 
 void
@@ -263,6 +268,7 @@ pp_expr(std::ostream& os, Node* t) {
   case var_term: return pp_var(os, as<Var>(t));
   case abs_term: return pp_abs(os, as<Abs>(t));
   case fn_term: return pp_fn(os, as<Fn>(t));
+  case func_term: return pp_func(os, as<Func>(t));
   case app_term: return pp_app(os, as<App>(t));
   case call_term: return pp_call(os, as<Call>(t));
   case ref_term: return pp_ref(os, as<Ref>(t));

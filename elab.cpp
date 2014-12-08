@@ -151,7 +151,7 @@ elab_lit(Lit_tree* t) {
   lang_unreachable(format("elaborating unknown literal '{}'", pretty(t)));
 }
 
-// Elaborate the definition.
+// Elaborate the const definition.
 //
 //        G |- n : T
 //    ------------------- T-def
@@ -160,11 +160,12 @@ elab_lit(Lit_tree* t) {
 // The definition is declared in the enclosing scope after,
 // allowing subsequent declarations to be elaborated.
 Expr*
-elab_def(Def_tree* t) {
-  Name* name = elab_name(t->name());
-  if (not name)
+elab_const(Id_tree* t,Tree* e) {
+  Name* name = elab_name(t);
+  if (not name )
     return nullptr;
-  Expr* value = elab_expr(t->value());
+
+  Expr* value = elab_expr(e);
   if (not value)
     return value;
 
@@ -172,6 +173,81 @@ elab_def(Def_tree* t) {
   Type* type = get_type(value);
   Def* def = new Def(t->loc, type, name, value);
   return declare(def);
+}
+
+
+// Elaborate an anonymous multi-parameter function.
+//
+//    G, for each f(ti:Ti)->Tk : (Ti)->Tk |- e : Tk
+//    ---------------------------------------------------E-func-def
+//             G |- def f(t1:T1…. tn:Tn)->Tk = e
+//
+// Note that this defines a function scope, just like an
+// abstraction term.
+Expr*
+elab_func(Func_tree* t,Tree* e) { 
+ 
+  // Elaborate the name.
+  Name* name = elab_name(t->name());
+  if (not name)
+    return nullptr;
+
+  // Stub out the function
+  Term_seq* parms = new Term_seq();
+  Func* func=  new Func(t->loc, nullptr, parms, nullptr, nullptr);
+
+  //Enter the function scope	
+  Scope_guard scope(func_scope);
+
+  //Elaborate function parameters. Note that
+  // each paramteer is declared as it is elaborated.
+  for (Tree *t0 : *t->parms()) {
+    Term* t1 = elab_term(t0);
+    if (not t1)
+      return nullptr;
+    if (not is<Var>(t1)) {
+      error(t1->loc) << format("ill-formed parameter '{}'", pretty(t1));
+      return nullptr;
+    }
+    parms->push_back(t1);
+  }
+
+  //Elaborate the result type.
+  Type* result =elab_type(t->type());
+  if (not result)
+    return nullptr;
+  func->t2=result;
+
+  // Compute the type of function and update.
+  Type* kind = get_kind_type();
+  Type_seq* t0 = get_type(parms);
+  Type* type = new Fn_type(no_location, kind, t0, result);
+  func->tr=type;
+
+  //Declare def
+  Def* def=new Def(t->loc,type,name,func);
+  if (not declare_outside(def))
+    return nullptr;
+
+  //Elaborate the function body
+  Term* value = elab_term(e);
+  if (not value)
+    return nullptr;
+  func->t3=value;
+ 
+  return def;
+}
+
+//Elaboration of definitions
+//A definition is either function or constant.
+//The typing is handled by elab_const or elab_func 
+Expr*
+elab_def(Def_tree* t){
+  if (Id_tree* v = as<Id_tree>(t->name()))
+    return elab_const(v, t->value());
+  if (Func_tree* f = as<Func_tree>(t->name()))
+    return elab_func(f, t->value());
+  lang_unreachable(format("{}: elaboration failure", t->loc));
 }
 
 // Elaborate an initializer.

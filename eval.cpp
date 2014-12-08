@@ -142,8 +142,8 @@ eval_app(App* t) {
 Term*
 eval_call(Call* t) {
   // Evaluate the function.
-  Fn* fn = as<Fn>(eval(t->fn()));
-  lang_assert(fn, format("ill-formed call target '{}'", pretty(t->fn())));
+  Term* ter = as<Term>(eval(t->fn()));
+  //lang_assert(fn, format("ill-formed call target '{}'", pretty(t->fn())));
 
   // Evaluate arguments in place. That is, we're not creating
   // a new sequence of arguments, just replacing the entries
@@ -151,11 +151,17 @@ eval_call(Call* t) {
   Term_seq* args = t->args();
   for (Term*& a : *args)
     a = eval(a);
-
+  if(Func* func=as<Func>(ter)){
+   Subst sub {func->parms(), args};
+  Term* result = subst_term(func->term(), sub);
+  return eval(result);
+  }
+  else if(Fn* fn=as<Fn>(ter)){
   // Beta reduce and evaluate.
   Subst sub {fn->parms(), args};
   Term* result = subst_term(fn->term(), sub);
   return eval(result);
+  }
 }
 
 // Elaborate a declaration reference. When the reference

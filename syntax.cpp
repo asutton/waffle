@@ -99,7 +99,7 @@ pp_arrow(std::ostream& os, Arrow_tree* t) {
 
 void
 pp_def(std::ostream& os, Def_tree* t) {
-  os << "def " << pretty(t->name()) << " = " << pretty(t->value());
+  os << "def " << pretty(t->name()) << " = " << group(pretty(t->value()));
 }
 
 void

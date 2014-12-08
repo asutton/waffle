@@ -36,6 +36,8 @@ constexpr Node_kind abs_term     = make_term_node(31); // \v.t
 constexpr Node_kind fn_term      = make_term_node(32); // \(v1, ..., vn).t
 constexpr Node_kind app_term     = make_term_node(33); // t1 t2
 constexpr Node_kind call_term    = make_term_node(34); // (t1, ..., tn)
+//Function terms
+constexpr Node_kind func_term    = make_term_node(35); // x(v1, ..., vn)->T
 // Tuples, records, and variants
 constexpr Node_kind tuple_term   = make_term_node(40); // {t1, ..., tn}
 constexpr Node_kind list_term    = make_term_node(41); // [t1, ..., tn]
@@ -64,6 +66,7 @@ constexpr Node_kind list_type    = make_type_node(23); // [T]
 constexpr Node_kind record_type  = make_type_node(24); // {l1:T1, ..., ln:Tn}
 constexpr Node_kind variant_type = make_type_node(25); // <l1:T1, ..., ln:Tn>
 constexpr Node_kind wild_type    = make_type_node(30); // *x:T
+constexpr Node_kind func_type    = make_type_node(31); // T(T1, ..., Tn) -> U
 
 
 // -------------------------------------------------------------------------- //
@@ -253,6 +256,24 @@ struct Abs : Term {
 
   Term* t1;
   Term* t2;
+};
+
+// A function of the form '(v1, ..., vn)->T=t' where 'vi' is a
+// variable declaration and 'T' is the return type. Unlike
+// an abstraction, a function can be called with many arguments.
+struct Func : Term {
+  Func(Type* t0, Term_seq* ps,Type* tt, Term* t)
+    : Term(func_term, t0), t1(ps), t2(tt), t3(t) { }
+  Func(const Location& l, Type* t0, Term_seq* ps,Type* tt, Term* t) 
+    : Term(func_term, l, t0), t1(ps), t2(tt), t3(t) { }
+   
+  Term_seq* parms() const { return t1; }
+  Type* returntype() const { return t2; }
+  Term* term() const { return t3; }
+
+  Term_seq* t1;
+  Type* t2;
+  Term* t3;
 };
 
 // A function of the form '\(v1, ..., vn).t' where 'vi' is a

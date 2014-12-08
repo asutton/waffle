@@ -9,7 +9,8 @@
 // Determines the kind of scope.
 enum Scope_kind {
   global_scope,
-  lambda_scope
+  lambda_scope,
+  func_scope
 };
 
 // A scope records a set of named terms (e.g., variables), allowing 
@@ -33,10 +34,12 @@ Scope* current_scope();
 
 bool in_global_scope();
 bool in_lambda_scope();
+bool in_func_scope();
 
 Expr* declare(Name*, Expr*);
 Expr* declare(Expr*);
 Expr* lookup(Name*);
+Expr* declare_outside(Expr*);
 
 Name* fresh_name();
 

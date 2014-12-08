@@ -1,3 +1,5 @@
-def func (x:Bool, y:Bool)->Bool=if x then true else false;
-print func;
-print typeof func;
+def fun (x:Bool, y:Bool)->Bool=if (if x then false else true) then y else false;
+print fun(true,false);
+def fun (x:Bool, y:Bool)->Bool=if x then true else false;
+print fun(true,false);
+

@@ -42,6 +42,10 @@ in_global_scope() { return current_scope()->kind == global_scope; }
 bool
 in_lambda_scope() { return current_scope()->kind == lambda_scope; }
 
+// Returns true if the system is currently in function scope.
+bool
+in_func_scope() { return current_scope()->kind == func_scope; }
+
 // Associate the term t with the name n in the current scope.
 Expr*
 declare(Name* n, Expr* e) {
@@ -62,6 +66,17 @@ declare(Expr* t) {
   if (Def* d = as<Def>(t))
     return declare(d->name(), d);
   lang_unreachable(format("cannot declare expression '{}'", node_name(t)));
+}
+
+// Declare the given definiton in the enclosing scope of current scope.
+Expr*
+declare_outside(Expr* t) {
+  Scope* s = current_scope();
+  s=s->parent;
+  if (Def* d = as<Def>(t)) {
+    s->insert({d->name(),d});
+    return d;
+  }
 }
 
 // Return the declaration associated with the name n,
