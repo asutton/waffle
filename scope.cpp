@@ -77,6 +77,7 @@ declare_outside(Expr* t) {
     s->insert({d->name(),d});
     return d;
   }
+  lang_unreachable(format("cannot declare expression '{}'", node_name(t)));
 }
 
 // Return the declaration associated with the name n,
