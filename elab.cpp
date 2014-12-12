@@ -941,6 +941,8 @@ elab_select(Select_tree* t) {
   Term* t1 = elab_term(t->t1);
   //elab the condition
   Term* t3 = elab_term(t->t3);
+  if(!is_same(get_bool_type(), get_type(t3)))
+    error(t->loc) << format("'{}' is not a boolean expression", pretty(t2));
 
   return new Select_from_where(get_kind_type(), t1, t2, t3);
 }

@@ -4,9 +4,4 @@ def x = [{x1 = true, x2 = 0, x3 = 1},
 def y = [{x15 = true, x25 = 1, x35 = 2},
 {x15 = false, x25 = 3, x35 = 4}];
 
-def B = x join y on y.x15 eq true;
-
-select (A.x1, A.x15)
-from (x join y on true) as A
-where true;
-
+x join y on (x.x1 eq y.x15);
