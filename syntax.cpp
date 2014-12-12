@@ -38,6 +38,7 @@ init_trees() {
   init_node(eq_comp_tree, "eq-comp-tree");
   init_node(less_tree, "less-tree");
   init_node(prog_tree, "prog-tree");
+  init_node(as_tree, "as-tree");
 }
 
 // -------------------------------------------------------------------------- //
@@ -58,6 +59,11 @@ pp_var(std::ostream& os, Var_tree* t) {
 void
 pp_init(std::ostream& os, Init_tree* t) {
   os << pretty(t->t1) << '=' << pretty(t->t2); 
+}
+
+void
+pp_as(std::ostream& os, As_tree* t) {
+  os << '(' << pretty(t->term()) << " as " << pretty(t->name()) << ')';
 }
 
 void
@@ -221,6 +227,7 @@ print(std::ostream& os, Tree* t) {
   case lit_tree: return pp_terminal(os, as<Lit_tree>(t));
   case var_tree: return pp_var(os, as<Var_tree>(t));
   case init_tree: return pp_init(os, as<Init_tree>(t));
+  case as_tree: return pp_as(os, as<As_tree>(t));
   case abs_tree: return pp_abs(os, as<Abs_tree>(t));
   case fn_tree: return pp_fn(os, as<Fn_tree>(t));
   case func_tree: return pp_func(os, as<Func_tree>(t));

@@ -9,4 +9,3 @@ def y = [{x15 = true, x25 = 1, x35 = 2},
 select (A.x1, A.x2, A.x25, A.x35)
 from (x join y on x.x3 eq y.x35) as A
 where A.x1 eq false;
-
